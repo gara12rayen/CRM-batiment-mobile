@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "CRM Bâtiment",
+    "slug": "crm-batiment-mobile",
+    "scheme": "crm-batiment",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
