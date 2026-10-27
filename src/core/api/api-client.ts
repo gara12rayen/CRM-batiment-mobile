@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 
+=======
+import axios from "axios";
+>>>>>>> Stashed changes
 import { env } from "@/core/config/env";
 import { secureStorage } from "@/core/storage/secure-storage";
 
@@ -9,14 +13,16 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(
-  endpoint: string,
-  init?: RequestInit,
-): Promise<T> {
-  if (!env.apiUrl) {
-    throw new Error("EXPO_PUBLIC_API_URL n'est pas configurée.");
-  }
+export const apiClient = axios.create({
+  baseURL: env.apiUrl,
+  timeout: 15000,
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+});
 
+<<<<<<< Updated upstream
   // Préparer les en-têtes de la requête.
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
@@ -39,10 +45,31 @@ export async function apiRequest<T>(
       response.status,
     );
   }
+=======
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        return Promise.reject(
+          new ApiError(
+            `La requête API a échoué (${error.response.status}).`,
+            error.response.status,
+          ),
+        );
+      }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
+      if (error.request) {
+        return Promise.reject(
+          new ApiError(
+            "Impossible de contacter le serveur. Vérifiez votre connexion.",
+            0,
+          ),
+        );
+      }
+    }
+>>>>>>> Stashed changes
 
-  return (await response.json()) as T;
-}
+    return Promise.reject(error);
+  },
+);

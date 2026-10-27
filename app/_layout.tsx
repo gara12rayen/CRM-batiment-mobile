@@ -1,3 +1,4 @@
+import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/core/theme/colors";
@@ -19,7 +20,10 @@ export default function RootLayout() {
           name="(auth)/forgot-password"
           options={{ title: "Mot de passe oublié" }}
         />
-        <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
+        <Stack.Screen
+          name="+not-found"
+          options={{ title: "Page introuvable" }}
+        />
       </Stack>
     </>
   );
