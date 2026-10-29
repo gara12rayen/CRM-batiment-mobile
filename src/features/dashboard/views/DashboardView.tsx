@@ -1,7 +1,9 @@
 
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +11,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 
+import { apiRequest } from "@/core/api/api-client";
+import { apiEndpoints } from "@/core/api/api-endpoints";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
 
@@ -29,7 +33,106 @@ type SectionTitleProps = {
 type QuoteStatus = {
   label: string;
   color: string;
+  count: number;
 };
+
+type PaginatedResponse<T> = {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+type DashboardCounts = {
+  demandes: number;
+  devis: number;
+  devisSignes: number;
+  brouillons: number;
+  envoyes: number;
+  signes: number;
+  refuses: number;
+};
+
+const initialCounts: DashboardCounts = {
+  demandes: 0,
+  devis: 0,
+  devisSignes: 0,
+  brouillons: 0,
+  envoyes: 0,
+  signes: 0,
+  refuses: 0,
+};
+
+/**
+ * Récupère le nombre total d'éléments correspondant
+ * à un endpoint et, si précisé, à un statut.
+ */
+async function countByStatus(
+  endpoint: string,
+  status?: string,
+): Promise<number> {
+  const params = new URLSearchParams({
+    page: "1",
+    limit: "1",
+  });
+
+  if (status) {
+    params.set("statuts", status);
+  }
+
+  const response = await apiRequest<PaginatedResponse<unknown>>(
+    `${endpoint}?${params.toString()}`,
+  );
+
+  if (
+    !response ||
+    !response.meta ||
+    typeof response.meta.total !== "number"
+  ) {
+    throw new Error("Le format de réponse du backend est invalide.");
+  }
+
+  return response.meta.total;
+}
+
+/**
+ * Charge les compteurs du tableau de bord.
+ * Les statuts sont ceux définis dans le backend.
+ */
+async function loadDashboardCounts(): Promise<DashboardCounts> {
+  const [
+    nouveau,
+    enCours,
+    qualifie,
+    devis,
+    brouillons,
+    envoyes,
+    signes,
+    refuses,
+  ] = await Promise.all([
+    countByStatus(apiEndpoints.demandesDevis, "NOUVEAU"),
+    countByStatus(apiEndpoints.demandesDevis, "EN_COURS"),
+    countByStatus(apiEndpoints.demandesDevis, "QUALIFIE"),
+    countByStatus(apiEndpoints.devis),
+    countByStatus(apiEndpoints.devis, "BROUILLON"),
+    countByStatus(apiEndpoints.devis, "ENVOYE"),
+    countByStatus(apiEndpoints.devis, "SIGNE"),
+    countByStatus(apiEndpoints.devis, "REFUSE"),
+  ]);
+
+  return {
+    demandes: nouveau + enCours + qualifie,
+    devis,
+    devisSignes: signes,
+    brouillons,
+    envoyes,
+    signes,
+    refuses,
+  };
+}
 
 function MetricCard({
   title,
@@ -46,11 +149,7 @@ function MetricCard({
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricDescription}>{description}</Text>
 
-      {onPress && (
-        <Text style={styles.cardAction}>
-          Consulter
-        </Text>
-      )}
+      {onPress && <Text style={styles.cardAction}>Consulter</Text>}
     </>
   );
 
@@ -112,9 +211,11 @@ function EmptyState({
 
 function QuoteStatusRow({
   status,
+  value,
   onPress,
 }: {
   status: QuoteStatus;
+  value: string;
   onPress: () => void;
 }) {
   return (
@@ -134,12 +235,11 @@ function QuoteStatusRow({
             { backgroundColor: status.color },
           ]}
         />
-
         <Text style={styles.statusLabel}>{status.label}</Text>
       </View>
 
       <View style={styles.statusRight}>
-        <Text style={styles.pendingValue}>—</Text>
+        <Text style={styles.pendingValue}>{value}</Text>
         <Text style={styles.chevron}>›</Text>
       </View>
     </Pressable>
@@ -150,21 +250,83 @@ export function DashboardView() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
+  const [counts, setCounts] = useState<DashboardCounts>(initialCounts);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshDashboard = useCallback(async () => {
+    try {
+      setError(null);
+
+      const result = await loadDashboardCounts();
+      setCounts(result);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de charger les données du tableau de bord.",
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  loadDashboardCounts()
+    .then((result) => {
+      if (cancelled) return;
+
+      setCounts(result);
+      setError(null);
+    })
+    .catch((err: unknown) => {
+      if (cancelled) return;
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de charger les données du tableau de bord.",
+      );
+    })
+    .finally(() => {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    });
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    void refreshDashboard();
+  }, [refreshDashboard]);
+
+  const displayed = (value: number) => {
+    if (loading) return "…";
+    if (error) return "—";
+    return String(value);
+  };
+
   // Deux colonnes sur téléphone, trois sur les écrans larges.
   const columns = width >= 700 ? 3 : 2;
-
   const horizontalPadding = spacing.md * 2;
   const gridGap = spacing.sm;
 
   const cardWidth =
-    (width - horizontalPadding - gridGap * (columns - 1)) /
-    columns;
+    (width - horizontalPadding - gridGap * (columns - 1)) / columns;
 
   const quoteStatuses: QuoteStatus[] = [
-    { label: "Brouillons", color: "#64748B" },
-    { label: "Envoyés", color: "#2563EB" },
-    { label: "Signés", color: "#16A34A" },
-    { label: "Refusés", color: "#DC2626" },
+    { label: "Brouillons", color: "#64748B", count: counts.brouillons },
+    { label: "Envoyés", color: "#2563EB", count: counts.envoyes },
+    { label: "Signés", color: "#16A34A", count: counts.signes },
+    { label: "Refusés", color: "#DC2626", count: counts.refuses },
   ];
 
   const openRequests = () => router.push("/prospects");
@@ -175,22 +337,45 @@ export function DashboardView() {
       style={styles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
     >
       {/* En-tête */}
       <View style={styles.welcomeCard}>
-        <Text style={styles.welcomeEyebrow}>
-          ESPACE COMMERCIAL
-        </Text>
+        <Text style={styles.welcomeEyebrow}>ESPACE COMMERCIAL</Text>
 
-        <Text style={styles.welcomeTitle}>
-          Bonjour ! 👋
-        </Text>
+        <Text style={styles.welcomeTitle}>Bonjour ! 👋</Text>
 
         <Text style={styles.welcomeDescription}>
-          Suivez vos demandes, vos devis et vos visites
-          programmées depuis votre tableau de bord.
+          Suivez vos demandes, vos devis et vos visites programmées
+          depuis votre tableau de bord.
         </Text>
       </View>
+
+      {/* Message d'erreur et possibilité de réessayer */}
+      {error && (
+        <View style={styles.errorCard}>
+          <Text style={styles.emptyTitle}>
+            Impossible de charger les données
+          </Text>
+          <Text style={styles.emptyDescription}>{error}</Text>
+
+          <Pressable
+            onPress={onRefresh}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.primaryButtonText}>Réessayer</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* SECTION 1 : DEMANDES */}
       <View style={styles.section}>
@@ -204,8 +389,8 @@ export function DashboardView() {
           <View style={{ width: cardWidth }}>
             <MetricCard
               title="À traiter"
-              value="—"
-              description="Demandes en attente"
+              value={displayed(counts.demandes)}
+              description="Nouvelles demandes et demandes en cours"
               color="#F59E0B"
               onPress={openRequests}
             />
@@ -214,20 +399,20 @@ export function DashboardView() {
 
         <View style={styles.sectionCard}>
           <View style={styles.cardHeadingRow}>
-            <Text style={styles.cardHeading}>
-              Demandes récentes
-            </Text>
+            <Text style={styles.cardHeading}>Demandes récentes</Text>
 
             <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>
-                En attente
-              </Text>
+              <Text style={styles.sectionBadgeText}>En attente</Text>
             </View>
           </View>
 
           <EmptyState
-            title="Aucune demande chargée"
-            description="Les demandes à traiter apparaîtront ici lorsque les données du backend seront disponibles."
+            title="Liste des demandes"
+            description={
+              error
+                ? "Les demandes ne peuvent pas être affichées pour le moment."
+                : "Le compteur est connecté au backend. La liste détaillée sera intégrée dans l'écran des demandes."
+            }
           />
 
           <Pressable
@@ -257,7 +442,7 @@ export function DashboardView() {
           <View style={{ width: cardWidth }}>
             <MetricCard
               title="Tous les devis"
-              value="—"
+              value={displayed(counts.devis)}
               description="Tous les statuts"
               color={colors.primary}
               onPress={openQuotes}
@@ -267,8 +452,8 @@ export function DashboardView() {
           <View style={{ width: cardWidth }}>
             <MetricCard
               title="Devis signés"
-              value="—"
-              description="Devis acceptés"
+              value={displayed(counts.devisSignes)}
+              description="Statut SIGNE"
               color="#16A34A"
               onPress={openQuotes}
             />
@@ -280,13 +465,14 @@ export function DashboardView() {
             <QuoteStatusRow
               key={status.label}
               status={status}
+              value={displayed(status.count)}
               onPress={openQuotes}
             />
           ))}
 
           <Text style={styles.helperText}>
-            Les compteurs seront renseignés après la connexion
-            aux API du backend.
+            Les compteurs sont actualisés depuis le backend.
+            Tire vers le bas pour actualiser.
           </Text>
         </View>
       </View>
@@ -307,13 +493,11 @@ export function DashboardView() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.cardHeading}>
-            Prochaines visites
-          </Text>
+          <Text style={styles.cardHeading}>Prochaines visites</Text>
 
           <EmptyState
-            title="Aucune visite chargée"
-            description="Le planning apparaîtra ici après l'intégration des données de visites."
+            title="API des visites à connecter"
+            description="Aucune route de visites n'a encore été identifiée dans le backend. Ce compteur sera connecté lorsque cette API sera disponible."
           />
         </View>
       </View>
@@ -446,6 +630,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+
+  errorCard: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#FECACA",
     padding: spacing.md,
     gap: spacing.md,
   },

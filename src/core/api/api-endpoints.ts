@@ -5,6 +5,7 @@ export const apiEndpoints = {
   },
   clients: "/clients",
   prospects: "/prospects",
+  demandesDevis: "/demandes-devis",
   devis: "/devis",
   catalogue: "/catalogue",
   chantiers: "/chantiers",

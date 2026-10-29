@@ -28,7 +28,10 @@ export async function apiRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(new URL(endpoint, env.apiUrl), {
+  const baseUrl = env.apiUrl.replace(/\/+$/, "");
+  const path = endpoint.replace(/^\/+/, "");
+
+  const response = await fetch(`${baseUrl}/${path}`, {
     ...init,
     headers,
   });
