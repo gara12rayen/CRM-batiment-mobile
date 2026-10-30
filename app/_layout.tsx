@@ -17,8 +17,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/login" options={{ title: "Connexion" }} />
         <Stack.Screen
-          name="(auth)/forgot-password"
-          options={{ title: "Mot de passe oublié" }}
+          name="(auth)/change-password"
+          options={{ title: "Changer le mot de passe" }}
         />
         <Stack.Screen
           name="+not-found"

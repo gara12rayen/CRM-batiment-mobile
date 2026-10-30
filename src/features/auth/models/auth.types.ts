@@ -1,4 +1,3 @@
-
 export type LoginCredentials = {
   email: string;
   password: string;
@@ -27,3 +26,25 @@ export type PasswordChangeRequiredResponse = {
 export type LoginResponse =
   | SessionResponse
   | PasswordChangeRequiredResponse;
+
+export type ChangePasswordCredentials = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ChangePasswordResponse = SessionResponse & {
+  message: string;
+};
+
+export function isPasswordChangeRequired(
+  response: LoginResponse,
+): response is PasswordChangeRequiredResponse {
+  return "mustChangePassword" in response;
+}
+
+export const PASSWORD_POLICY = {
+  minLength: 10,
+  maxLength: 72,
+  description:
+    "Au moins 10 caractères, dont une majuscule, une minuscule et un chiffre.",
+} as const;

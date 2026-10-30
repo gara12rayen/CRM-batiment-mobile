@@ -27,6 +27,7 @@ export default function LoginView({
 }: LoginViewProps) {
   const [showPassword, setShowPassword] = useState(false);
 
+  // Initializes the form and tracks validation errors.
   const {
     control,
     handleSubmit,
