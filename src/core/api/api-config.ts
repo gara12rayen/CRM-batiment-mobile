@@ -1,10 +1,9 @@
-import { Platform } from "react-native";
+import { env } from "@/core/config/env";
 
-const LOCAL_BACKEND_PORT = 3000;
+if (!env.apiUrl) {
+  throw new Error(
+    "EXPO_PUBLIC_API_URL is missing. Please configure your .env file.",
+  );
+}
 
-const getBaseURL = () => {
-  
-    return `http://localhost:${LOCAL_BACKEND_PORT}`;
-};
-
-export const API_BASE_URL = getBaseURL();
+export const API_BASE_URL = env.apiUrl.replace(/\/+$/, "");

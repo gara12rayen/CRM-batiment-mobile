@@ -1,6 +1,7 @@
+
 import axios from "axios";
 import { env } from "@/core/config/env";
-import { secureStorage } from "@/core/storage/secure-storage";
+import { getAccessToken } from "@/features/auth/services/authStorage";
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -18,6 +19,18 @@ export const apiClient = axios.create({
   },
 });
 
+// Ajouter automatiquement le token JWT aux requêtes protégées.
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getAccessToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+// Centraliser la gestion des erreurs API.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -44,3 +57,9 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// Fonction générique pour récupérer directement les données de l'API.
+export async function apiRequest<T>(url: string): Promise<T> {
+  const response = await apiClient.get<T>(url);
+  return response.data;
+}
