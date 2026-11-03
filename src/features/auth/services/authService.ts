@@ -1,11 +1,16 @@
 
 import axios from "axios";
-import { apiClient } from "@/core/api/api-client";
+import { apiClient, ApiError } from "@/core/api/api-client";
 import type {
   LoginCredentials,
   LoginResponse,
    ChangePasswordCredentials,
   ChangePasswordResponse,
+   ForgotPasswordCredentials,
+  ForgotPasswordResponse,
+  VerifyResetCodeCredentials,
+  VerifyResetCodeResponse,
+  ResetPasswordCredentials,
 } from "@/features/auth/models/auth.types";
 
 /**
@@ -39,6 +44,8 @@ export function getLoginErrorStatus(error: unknown): number | null {
   return null;
 }
 
+
+
 export async function changePassword(
   credentials: ChangePasswordCredentials,
   passwordChangeToken: string,
@@ -54,4 +61,60 @@ export async function changePassword(
   );
 
   return response.data;
+}
+
+export async function forgotPassword(
+  credentials: ForgotPasswordCredentials,
+): Promise<ForgotPasswordResponse> {
+  const response = await apiClient.post<ForgotPasswordResponse>(
+    "/auth/forgot-password",
+    {
+      email: credentials.email.trim().toLowerCase(),
+    },
+  );
+
+  return response.data;
+}
+
+export async function verifyResetCode(
+  credentials: VerifyResetCodeCredentials,
+): Promise<VerifyResetCodeResponse> {
+  const response = await apiClient.post<VerifyResetCodeResponse>(
+    "/auth/verify-reset-code",
+    {
+      email: credentials.email.trim().toLowerCase(),
+      code: credentials.code.trim(),
+    },
+  );
+
+  return response.data;
+}
+
+export async function resetPassword(
+  credentials: ResetPasswordCredentials,
+): Promise<ForgotPasswordResponse> {
+  const response = await apiClient.post<ForgotPasswordResponse>(
+    "/auth/reset-password",
+    {
+      email: credentials.email.trim().toLowerCase(),
+      code: credentials.code.trim(),
+      newPassword: credentials.newPassword,
+    },
+  );
+
+  return response.data;
+}
+
+export function getVerifyResetCodeErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 429) {
+      return "Trop de tentatives. Veuillez patienter avant de réessayer.";
+    }
+
+    if (error.status === 400) {
+      return "Le code de vérification est incorrect ou a expiré.";
+    }
+  }
+
+  return "Impossible de vérifier le code. Veuillez réessayer.";
 }

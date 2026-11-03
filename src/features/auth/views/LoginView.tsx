@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { colors, radius, spacing } from "@/core/theme";
+import { router } from "expo-router";
 
 export type LoginFormValues = {
   email: string;
@@ -256,13 +257,22 @@ export default function LoginView({
             </View>
           )}
 
+          <Pressable
+            className="self-end"
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            <Text className="font-medium text-[#185FA5]">
+              Mot de passe oublié ?
+            </Text>
+          </Pressable>
+
           {/* Submit button */}
           <Pressable
             onPress={handleSubmit(submit)}
             disabled={isLoading}
             accessibilityRole="button"
             accessibilityLabel="Se connecter"
-            className="flex-row items-center justify-center px-4 py-4"
+            className="flex-row items-center justify-center mt-4 px-4 py-4"
             style={{
               backgroundColor: isLoading
                 ? colors.brand[500]

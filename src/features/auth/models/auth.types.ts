@@ -48,3 +48,24 @@ export const PASSWORD_POLICY = {
   description:
     "Au moins 10 caractères, dont une majuscule, une minuscule et un chiffre.",
 } as const;
+
+export type ForgotPasswordCredentials = {
+  email: string;
+};
+
+export type VerifyResetCodeCredentials = {
+  email: string;
+  code: string;
+};
+
+export type ResetPasswordCredentials = VerifyResetCodeCredentials & {
+  newPassword: string;
+};
+
+export type ForgotPasswordResponse = {
+  message: string;
+};
+
+export type VerifyResetCodeResponse = {
+  message: string;
+};

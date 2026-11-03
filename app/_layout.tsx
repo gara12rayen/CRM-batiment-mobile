@@ -24,6 +24,9 @@ export default function RootLayout() {
           name="+not-found"
           options={{ title: "Page introuvable" }}
         />
+        <Stack.Screen name="forgot-password" />
+        <Stack.Screen name="verify-reset-code" />
+        <Stack.Screen name="reset-password" />
       </Stack>
     </>
   );
