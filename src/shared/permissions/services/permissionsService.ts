@@ -7,7 +7,7 @@ import type { PermissionStatus, PermissionType } from "../models/permission.type
  * Supporte :
  *  - L'ouverture universelle des paramètres système (iOS et Android)
  *  - Un mode d'essai / simulation permettant de tester tous les cas (accord, refus, blocage)
- *  - Une architecture extensible pour brancher les modules natifs Expo
+ *  - L'API Web standard (navigateur) pour tester immédiatement avec expo start --web
  */
 class PermissionsService {
   private isMockMode: boolean = false;
@@ -56,56 +56,73 @@ class PermissionsService {
       return this.mockStatuses[type];
     }
 
-    try {
-      // Détection native dynamique si les modules Expo sont disponibles
-      switch (type) {
-        case "camera": {
-          // Si expo-camera est disponible
-          const CameraModule = await this.safeImport("expo-camera");
-          if (CameraModule?.Camera?.getCameraPermissionsAsync) {
-            const res = await CameraModule.Camera.getCameraPermissionsAsync();
-            return this.mapExpoPermission(res);
+    // Gestion native Web si exécuté dans un navigateur
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      try {
+        switch (type) {
+          case "notifications": {
+            if (typeof Notification !== "undefined") {
+              if (Notification.permission === "granted") return "granted";
+              if (Notification.permission === "denied") return "denied";
+              return "undetermined";
+            }
+            break;
           }
-          break;
-        }
-        case "location": {
-          const LocationModule = await this.safeImport("expo-location");
-          if (LocationModule?.getForegroundPermissionsAsync) {
-            const res = await LocationModule.getForegroundPermissionsAsync();
-            return this.mapExpoPermission(res);
+          case "location": {
+            if (navigator?.permissions?.query) {
+              const res = await navigator.permissions.query({
+                name: "geolocation" as PermissionName,
+              });
+              if (res.state === "granted") return "granted";
+              if (res.state === "denied") return "denied";
+              return "undetermined";
+            }
+            break;
           }
-          break;
-        }
-        case "notifications": {
-          const NotifModule = await this.safeImport("expo-notifications");
-          if (NotifModule?.getPermissionsAsync) {
-            const res = await NotifModule.getPermissionsAsync();
-            return this.mapExpoPermission(res);
+          case "camera": {
+            if (navigator?.permissions?.query) {
+              try {
+                const res = await navigator.permissions.query({
+                  name: "camera" as any,
+                });
+                if (res.state === "granted") return "granted";
+                if (res.state === "denied") return "denied";
+                return "undetermined";
+              } catch {
+                // Non supporté par tous les navigateurs pour camera
+              }
+            }
+            break;
           }
-          break;
-        }
-        case "microphone": {
-          const AudioModule = await this.safeImport("expo-av");
-          if (AudioModule?.Audio?.getPermissionsAsync) {
-            const res = await AudioModule.Audio.getPermissionsAsync();
-            return this.mapExpoPermission(res);
+          case "microphone": {
+            if (navigator?.permissions?.query) {
+              try {
+                const res = await navigator.permissions.query({
+                  name: "microphone" as any,
+                });
+                if (res.state === "granted") return "granted";
+                if (res.state === "denied") return "denied";
+                return "undetermined";
+              } catch {
+                // Non supporté par tous les navigateurs pour micro
+              }
+            }
+            break;
           }
-          break;
         }
+      } catch {
+        // Fallback gracieux vers l'état simulé
       }
-    } catch {
-      // Si un module natif n'est pas encore lié ou en environnement web/mock
     }
 
     return this.mockStatuses[type];
   }
 
   /**
-   * Déclenche la demande système réelle auprès de l'OS.
+   * Déclenche la demande d'autorisation auprès du système.
    */
   async requestPermission(type: PermissionType): Promise<PermissionStatus> {
     if (this.isMockMode) {
-      // En mode mock, une demande passe par défaut à 'granted' sauf si configuré autrement
       if (this.mockStatuses[type] === "blocked") {
         return "blocked";
       }
@@ -113,54 +130,98 @@ class PermissionsService {
       return "granted";
     }
 
-    try {
-      switch (type) {
-        case "camera": {
-          const CameraModule = await this.safeImport("expo-camera");
-          if (CameraModule?.Camera?.requestCameraPermissionsAsync) {
-            const res = await CameraModule.Camera.requestCameraPermissionsAsync();
-            const status = this.mapExpoPermission(res);
-            this.mockStatuses[type] = status;
-            return status;
+    // Gestion Web standard si exécuté dans un navigateur
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      try {
+        switch (type) {
+          case "notifications": {
+            if (typeof Notification !== "undefined") {
+              const res = await Notification.requestPermission();
+              const status: PermissionStatus =
+                res === "granted"
+                  ? "granted"
+                  : res === "denied"
+                    ? "denied"
+                    : "undetermined";
+              this.mockStatuses[type] = status;
+              return status;
+            }
+            break;
           }
-          break;
-        }
-        case "location": {
-          const LocationModule = await this.safeImport("expo-location");
-          if (LocationModule?.requestForegroundPermissionsAsync) {
-            const res = await LocationModule.requestForegroundPermissionsAsync();
-            const status = this.mapExpoPermission(res);
-            this.mockStatuses[type] = status;
-            return status;
+          case "location": {
+            if (navigator?.geolocation) {
+              const status: PermissionStatus = await new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                  () => resolve("granted"),
+                  (err) => {
+                    if (err.code === err.PERMISSION_DENIED) {
+                      resolve("denied");
+                    } else {
+                      resolve("undetermined");
+                    }
+                  },
+                  { timeout: 8000 },
+                );
+              });
+              this.mockStatuses[type] = status;
+              return status;
+            }
+            break;
           }
-          break;
-        }
-        case "notifications": {
-          const NotifModule = await this.safeImport("expo-notifications");
-          if (NotifModule?.requestPermissionsAsync) {
-            const res = await NotifModule.requestPermissionsAsync();
-            const status = this.mapExpoPermission(res);
-            this.mockStatuses[type] = status;
-            return status;
+          case "camera": {
+            if (navigator?.mediaDevices?.getUserMedia) {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                  video: true,
+                });
+                stream.getTracks().forEach((track) => track.stop());
+                this.mockStatuses[type] = "granted";
+                return "granted";
+              } catch (err: any) {
+                const isDenied =
+                  err.name === "NotAllowedError" ||
+                  err.name === "PermissionDeniedError";
+                const status: PermissionStatus = isDenied
+                  ? "denied"
+                  : "undetermined";
+                this.mockStatuses[type] = status;
+                return status;
+              }
+            }
+            break;
           }
-          break;
-        }
-        case "microphone": {
-          const AudioModule = await this.safeImport("expo-av");
-          if (AudioModule?.Audio?.requestPermissionsAsync) {
-            const res = await AudioModule.Audio.requestPermissionsAsync();
-            const status = this.mapExpoPermission(res);
-            this.mockStatuses[type] = status;
-            return status;
+          case "microphone": {
+            if (navigator?.mediaDevices?.getUserMedia) {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                  audio: true,
+                });
+                stream.getTracks().forEach((track) => track.stop());
+                this.mockStatuses[type] = "granted";
+                return "granted";
+              } catch (err: any) {
+                const isDenied =
+                  err.name === "NotAllowedError" ||
+                  err.name === "PermissionDeniedError";
+                const status: PermissionStatus = isDenied
+                  ? "denied"
+                  : "undetermined";
+                this.mockStatuses[type] = status;
+                return status;
+              }
+            }
+            break;
           }
-          break;
         }
+      } catch {
+        // Fallback
       }
-    } catch {
-      // Fallback gracieux
     }
 
-    // Si les modules natifs ne sont pas encore installés dans le projet
+    // Prototype / Environnement mobile : transition vers granted sauf si explicitement bloqué
+    if (this.mockStatuses[type] === "blocked") {
+      return "blocked";
+    }
     this.mockStatuses[type] = "granted";
     return "granted";
   }
@@ -175,41 +236,16 @@ class PermissionsService {
         await Linking.openSettings();
         return true;
       }
-      return false;
+
+      if (typeof window !== "undefined") {
+        window.alert(
+          "Sur le navigateur web, veuillez autoriser l'accès depuis les paramètres du site (icône cadenas à gauche de la barre d'adresse).",
+        );
+      }
+      return true;
     } catch (error) {
       console.warn("Impossible d'ouvrir les réglages :", error);
       return false;
-    }
-  }
-
-  /**
-   * Mappe la réponse standard d'Expo vers notre PermissionStatus unifié.
-   */
-  private mapExpoPermission(response: {
-    granted?: boolean;
-    canAskAgain?: boolean;
-    status?: string;
-  }): PermissionStatus {
-    if (response?.granted) {
-      return "granted";
-    }
-    if (response?.canAskAgain === false) {
-      return "blocked";
-    }
-    if (response?.status === "denied") {
-      return "denied";
-    }
-    return "undetermined";
-  }
-
-  /**
-   * Import dynamique sécurisé pour éviter tout crash si un module Expo optionnel n'est pas installé.
-   */
-  private async safeImport(moduleName: string): Promise<any> {
-    try {
-      return await import(moduleName);
-    } catch {
-      return null;
     }
   }
 }
