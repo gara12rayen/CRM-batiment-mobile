@@ -92,3 +92,4 @@ export const PERMISSION_DESCRIPTIONS: Record<PermissionType, PermissionConfig> =
     iconName: "bell",
   },
 };
+

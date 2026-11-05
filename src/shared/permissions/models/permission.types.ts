@@ -34,3 +34,4 @@ export type PermissionState = {
   canAskAgain: boolean;
   lastCheckedAt?: number;
 };
+
