@@ -1,6 +1,7 @@
-
+﻿
 import { useRouter } from "expo-router";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +12,9 @@ import {
 
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
+import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
 type MetricCardProps = {
   title: string;
@@ -47,9 +51,7 @@ function MetricCard({
       <Text style={styles.metricDescription}>{description}</Text>
 
       {onPress && (
-        <Text style={styles.cardAction}>
-          Consulter
-        </Text>
+        <Text style={styles.cardAction}>Consulter</Text>
       )}
     </>
   );
@@ -149,6 +151,24 @@ function QuoteStatusRow({
 export function DashboardView() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (!user || !permissions.canAccessCommercial(user.role)) {
+    return (
+      <PlaceholderView
+        title="Accès non autorisé"
+        description="Vous n'avez pas accès au tableau de bord commercial."
+      />
+    );
+  }
 
   // Deux colonnes sur téléphone, trois sur les écrans larges.
   const columns = width >= 700 ? 3 : 2;
@@ -259,7 +279,7 @@ export function DashboardView() {
               title="Tous les devis"
               value="—"
               description="Tous les statuts"
-              color={colors.primary}
+              color={colors.brand[700]}
               onPress={openQuotes}
             />
           </View>
@@ -326,6 +346,12 @@ export function DashboardView() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   screen: {
     flex: 1,
     backgroundColor: "#F8FAFC",
@@ -376,13 +402,13 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     flex: 1,
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 18,
     fontWeight: "700",
   },
 
   actionText: {
-    color: colors.primary,
+    color: colors.brand[700],
     fontSize: 13,
     fontWeight: "600",
   },
@@ -413,25 +439,25 @@ const styles = StyleSheet.create({
   },
 
   metricTitle: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 13,
     fontWeight: "500",
   },
 
   metricValue: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 27,
     fontWeight: "700",
   },
 
   metricDescription: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     lineHeight: 17,
   },
 
   cardAction: {
-    color: colors.primary,
+    color: colors.brand[700],
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -458,7 +484,7 @@ const styles = StyleSheet.create({
   },
 
   cardHeading: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -502,7 +528,7 @@ const styles = StyleSheet.create({
   },
 
   statusLabel: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 14,
   },
 
@@ -513,18 +539,18 @@ const styles = StyleSheet.create({
   },
 
   pendingValue: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 16,
     fontWeight: "700",
   },
 
   chevron: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 23,
   },
 
   helperText: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     lineHeight: 18,
     borderTopWidth: 1,
@@ -537,19 +563,19 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 15,
     fontWeight: "600",
   },
 
   emptyDescription: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 13,
     lineHeight: 20,
   },
 
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.brand[700],
     padding: spacing.md,
     borderRadius: 10,
     alignItems: "center",
@@ -563,7 +589,7 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     textAlign: "center",
     marginTop: spacing.sm,

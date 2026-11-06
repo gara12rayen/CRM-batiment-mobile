@@ -290,7 +290,9 @@ export function ChangePasswordView({
             canSubmit ? "bg-[#185FA5]" : "bg-gray-300"
           }`}
           disabled={!canSubmit}
-          onPress={handleSubmit(submit)}
+          onPress={() => {
+            void handleSubmit(submit)();
+          }}
         >
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" />

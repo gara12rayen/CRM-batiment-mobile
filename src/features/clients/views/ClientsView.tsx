@@ -1,6 +1,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -16,6 +17,8 @@ import { getClients } from "../services/clients.service";
 import { Input } from "@/shared/components/Input";
 import { Loading } from "@/shared/components/Loading";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
 
@@ -28,6 +31,7 @@ function getClientName(client: Client): string {
   if (client.typeClient === "PARTICULIER") {
     return [client.prenom, client.nom].filter(Boolean).join(" ");
   }
+
   return client.nom;
 }
 
@@ -44,6 +48,10 @@ function getStatusLabel(status: Client["statut"]): string {
 
 export function ClientsView() {
   const router = useRouter();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  const canReadClients = user !== null && permissions.canReadClients(user.role);
+  const canManageClients = user !== null && permissions.canAccessCommercial(user.role);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
@@ -60,6 +68,8 @@ export function ClientsView() {
 
   const loadClients = useCallback(
     async (pageNumber: number, searchValue: string, append = false) => {
+      if (!canReadClients) return;
+
       try {
         setError(null);
 
@@ -83,11 +93,23 @@ export function ClientsView() {
         );
       }
     },
-    [],
+    [canReadClients],
   );
 
   useEffect(() => {
     let active = true;
+
+    if (isAuthLoading) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!canReadClients) {
+  return () => {
+    active = false;
+  };
+}
 
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -122,27 +144,46 @@ export function ClientsView() {
       active = false;
       clearTimeout(timer);
     };
-  }, [search]);
+  }, [search, isAuthLoading, canReadClients]);
 
   const handleRefresh = useCallback(async () => {
+    if (!canReadClients) return;
+
     setRefreshing(true);
+
     try {
       await loadClients(1, search);
     } finally {
       setRefreshing(false);
     }
-  }, [loadClients, search]);
+  }, [canReadClients, loadClients, search]);
 
   const handleLoadMore = useCallback(async () => {
-    if (loadingMore || loading || page >= totalPages) return;
+    if (
+      !canReadClients ||
+      loadingMore ||
+      loading ||
+      page >= totalPages
+    ) {
+      return;
+    }
 
     setLoadingMore(true);
+
     try {
       await loadClients(page + 1, search, true);
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, loading, page, totalPages, loadClients, search]);
+  }, [
+    canReadClients,
+    loadingMore,
+    loading,
+    page,
+    totalPages,
+    loadClients,
+    search,
+  ]);
 
   const filteredClients = useMemo(() => {
     let result = [...clients];
@@ -168,6 +209,8 @@ export function ClientsView() {
   }, [clients, typeFilter, statusFilter, sortDescending]);
 
   const openClient = (id: number) => {
+    if (!canReadClients) return;
+
     router.push({
       pathname: "/clients/[id]",
       params: { id: String(id) },
@@ -175,6 +218,8 @@ export function ClientsView() {
   };
 
   const openCreateForm = () => {
+    if (!canManageClients) return;
+
     router.push("/clients/create");
   };
 
@@ -186,6 +231,8 @@ export function ClientsView() {
     <Pressable
       key={label}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
       style={[styles.filterChip, selected && styles.filterChipSelected]}
     >
       <Text style={[styles.filterText, selected && styles.filterTextSelected]}>
@@ -211,6 +258,8 @@ export function ClientsView() {
           pressed && styles.clientCardPressed,
         ]}
         onPress={() => openClient(item.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Voir la fiche de ${getClientName(item)}`}
       >
         <View style={styles.clientHeader}>
           <View style={styles.avatar}>
@@ -273,17 +322,45 @@ export function ClientsView() {
     );
   };
 
+  // Vérifications après tous les hooks pour respecter les règles React.
+  if (isAuthLoading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={colors.brand[700]} />
+      </View>
+    );
+  }
+
+  if (!user || !canReadClients) {
+    return (
+      <View style={styles.accessDeniedContainer}>
+        <Text style={styles.title}>Accès non autorisé</Text>
+        <Text style={styles.subtitle}>
+          Vous n'avez pas accès à la gestion des clients.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Mes clients</Text>
-          <Text style={styles.subtitle}>Consultez et gérez vos clients</Text>
+        <Text style={styles.title}>Mes clients</Text>
+          <Text style={styles.subtitle}>
+            {canManageClients ? "Consultez et gérez vos clients" : "Consultez les clients de vos chantiers"}
+          </Text>
         </View>
 
-        <Pressable style={styles.addButton} onPress={openCreateForm}>
-          <Text style={styles.addButtonText}>+ Ajouter</Text>
-        </Pressable>
+        {canManageClients && (
+          <Pressable
+            style={styles.addButton}
+            onPress={openCreateForm}
+            accessibilityRole="button"
+          >
+            <Text style={styles.addButtonText}>+ Ajouter</Text>
+          </Pressable>
+        )}
       </View>
 
       <Input
@@ -294,7 +371,6 @@ export function ClientsView() {
         style={styles.searchInput}
       />
 
-      {/* Zone des filtres */}
       <View style={styles.filtersSection}>
         <Text style={styles.filterTitle}>Type de client</Text>
 
@@ -336,7 +412,6 @@ export function ClientsView() {
         </ScrollView>
       </View>
 
-      {/* Résultats et tri */}
       <View style={styles.resultsRow}>
         <Text style={styles.resultsText}>
           {filteredClients.length} client(s) affiché(s)
@@ -345,6 +420,8 @@ export function ClientsView() {
         <Pressable
           style={styles.sortButton}
           onPress={() => setSortDescending((previous) => !previous)}
+          accessibilityRole="button"
+          accessibilityLabel="Modifier le tri alphabétique"
         >
           <Text style={styles.sortText}>
             {sortDescending ? "Z → A" : "A → Z"}
@@ -386,6 +463,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.DEFAULT,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  accessDeniedContainer: {
+    flex: 1,
+    backgroundColor: colors.background.DEFAULT,
+    padding: spacing.lg,
+    justifyContent: "center",
+    alignItems: "center",
   },
   titleRow: {
     flexDirection: "row",

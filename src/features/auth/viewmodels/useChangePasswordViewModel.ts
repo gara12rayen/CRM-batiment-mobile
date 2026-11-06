@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useRouter } from "expo-router";
 
@@ -9,9 +10,11 @@ import {
 } from "@/features/auth/services/authStorage";
 import type { ChangePasswordCredentials } from "@/features/auth/models/auth.types";
 import { ApiError } from "@/core/api/api-client";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export function useChangePasswordViewModel() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,7 +29,9 @@ export function useChangePasswordViewModel() {
       const passwordChangeToken = await getPasswordChangeToken();
 
       if (!passwordChangeToken) {
-        setErrorMessage("Votre session a expiré. Veuillez vous reconnecter.");
+        setErrorMessage(
+          "Votre session a expiré. Veuillez vous reconnecter.",
+        );
         router.replace("/(auth)/login");
         return;
       }
@@ -38,6 +43,7 @@ export function useChangePasswordViewModel() {
 
       await saveSession(session);
       await clearPasswordChangeToken();
+      await refreshUser();
 
       router.replace("/(tabs)");
     } catch (error) {

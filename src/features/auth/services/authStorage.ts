@@ -1,5 +1,9 @@
+
 import * as SecureStore from "expo-secure-store";
-import type { SessionResponse } from "@/features/auth/models/auth.types";
+import type {
+  SessionResponse,
+  SessionUser,
+} from "@/features/auth/models/auth.types";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const USER_KEY = "sessionUser";
@@ -11,21 +15,34 @@ export async function saveSession(session: SessionResponse) {
   await SecureStore.deleteItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
 }
 
-export async function getAccessToken() {
+export async function getAccessToken(): Promise<string | null> {
   return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
 }
 
-export async function getSessionUser() {
+export async function getSessionUser(): Promise<SessionUser | null> {
   const user = await SecureStore.getItemAsync(USER_KEY);
 
-  return user ? JSON.parse(user) : null;
+  if (!user) return null;
+
+  try {
+    return JSON.parse(user) as SessionUser;
+  } catch {
+    await clearSession();
+    return null;
+  }
+}
+
+export async function clearSession(): Promise<void> {
+  await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+  await SecureStore.deleteItemAsync(USER_KEY);
+  await SecureStore.deleteItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
 }
 
 export async function savePasswordChangeToken(token: string) {
   await SecureStore.setItemAsync(PASSWORD_CHANGE_TOKEN_KEY, token);
 }
 
-export async function getPasswordChangeToken() {
+export async function getPasswordChangeToken(): Promise<string | null> {
   return SecureStore.getItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
 }
 

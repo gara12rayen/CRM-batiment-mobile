@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from "react-native";
+﻿import { StyleSheet, Text } from "react-native";
 import { colors } from "@/core/theme/colors";
 
 type ErrorMessageProps = {
@@ -14,5 +14,6 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
 }
 
 const styles = StyleSheet.create({
-  message: { color: colors.danger, paddingVertical: 8 },
+  message: { color: colors.status.error, paddingVertical: 8 },
 });
+

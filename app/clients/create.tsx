@@ -16,6 +16,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
+import { PlaceholderView } from "@/shared/components/PlaceholderView";
 import {
   createClient,
   getClientById,
@@ -35,12 +38,17 @@ type Duplicate = {
 
 export default function CreateClientRoute() {
   const router = useRouter();
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
 
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const clientId = Number(rawId);
+
   const isEditMode =
     Boolean(rawId) && Number.isInteger(clientId) && clientId > 0;
+
+  const canManageClients =
+    user !== null && permissions.canAccessCommercial(user.role);
 
   const [typeClient, setTypeClient] =
     useState<ClientType>("PARTICULIER");
@@ -61,9 +69,11 @@ export default function CreateClientRoute() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
 
-  // Charger les informations du client en mode modification.
+  // Charger le client uniquement si l'utilisateur est autorisé.
   useEffect(() => {
-    if (!isEditMode) return;
+    if (!isEditMode || !canManageClients) {
+      return;
+    }
 
     let active = true;
 
@@ -113,7 +123,7 @@ export default function CreateClientRoute() {
     return () => {
       active = false;
     };
-  }, [clientId, isEditMode, router]);
+  }, [clientId, isEditMode, canManageClients, router]);
 
   const normalizePhone = (value: string) =>
     value.replace(/\D/g, "");
@@ -164,6 +174,8 @@ export default function CreateClientRoute() {
   };
 
   const submitClient = async () => {
+    if (!canManageClients) return;
+
     if (!nom.trim()) {
       Alert.alert(
         "Champ obligatoire",
@@ -256,6 +268,8 @@ export default function CreateClientRoute() {
 
   // Création ou modification selon le mode du formulaire.
   const saveClient = async () => {
+    if (!canManageClients) return;
+
     setLoading(true);
 
     const payload: ClientPayload = {
@@ -365,6 +379,16 @@ export default function CreateClientRoute() {
       />
     </View>
   );
+
+  // Vérification des autorisations avant d'afficher le formulaire.
+  if (!canManageClients) {
+    return (
+      <PlaceholderView
+        title="Accès non autorisé"
+        description="Vous n'avez pas les droits nécessaires pour gérer les clients."
+      />
+    );
+  }
 
   if (initialLoading) {
     return (

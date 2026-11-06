@@ -14,6 +14,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { getClientById } from "@/features/clients/services/clients.service";
 import type { ClientDetails } from "@/features/clients/models/ClientDetails";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
+import { PlaceholderView } from "@/shared/components/PlaceholderView";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
 
@@ -95,6 +98,10 @@ function getStatusLabel(status: string): string {
 export default function ClientDetailsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+
+  const canReadClients = user !== null && permissions.canReadClients(user.role);
+  const canManageClients = user !== null && permissions.canAccessCommercial(user.role);
 
   const [client, setClient] = useState<ClientDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,6 +110,13 @@ export default function ClientDetailsRoute() {
 
   const loadClient = useCallback(async () => {
     const clientId = Number(id);
+
+    if (!canReadClients) {
+      setError("Vous n'avez pas accès à cette fiche client.");
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
 
     if (!id || !Number.isInteger(clientId) || clientId <= 0) {
       setError("Identifiant du client invalide.");
@@ -126,10 +140,14 @@ export default function ClientDetailsRoute() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [id]);
+  }, [id, canReadClients]);
 
   useEffect(() => {
-    loadClient();
+  const timer = setTimeout(() => {
+    void loadClient();
+  }, 0);
+
+  return () => clearTimeout(timer);
   }, [loadClient]);
 
   const handleRefresh = () => {
@@ -162,7 +180,7 @@ export default function ClientDetailsRoute() {
   };
 
   const handleEdit = () => {
-    if (!client) return;
+    if (!client || !canManageClients) return;
 
     router.push({
       pathname: "/clients/create",
@@ -178,6 +196,15 @@ export default function ClientDetailsRoute() {
           Chargement de la fiche client...
         </Text>
       </View>
+    );
+  }
+
+  if (!canReadClients) {
+    return (
+      <PlaceholderView
+        title="Accès non autorisé"
+        description="Vous n'avez pas accès à cette fiche client."
+      />
     );
   }
 
@@ -276,12 +303,14 @@ export default function ClientDetailsRoute() {
             <Text style={styles.actionButtonText}>⌖ Itinéraire</Text>
           </Pressable>
 
-          <Pressable
-            style={[styles.actionButton, styles.editButton]}
-            onPress={handleEdit}
-          >
-            <Text style={styles.actionButtonText}>✎ Modifier</Text>
-          </Pressable>
+          {canManageClients && (
+            <Pressable
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleEdit}
+            >
+              <Text style={styles.actionButtonText}>✎ Modifier</Text>
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -376,9 +405,11 @@ export default function ClientDetailsRoute() {
                   </Text>
                 </View>
 
-                <Text style={styles.historyDetail}>
-                  Montant : {formatAmount(devis.totalTTC)}
-                </Text>
+                {user && permissions.canViewAmounts(user.role) && (
+                  <Text style={styles.historyDetail}>
+                    Montant : {formatAmount(devis.totalTTC)}
+                  </Text>
+                )}
 
                 <Text style={styles.historyDate}>
                   Créé le {formatDate(devis.createdAt)}

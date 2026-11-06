@@ -1,3 +1,22 @@
+
+export const USER_ROLES = [
+  "ADMIN",
+  "TECHNICO",
+  "ASSISTANTE",
+  "CHEF_CHANTIER",
+  "SOUS_TRAITANT",
+  "FOURNISSEUR",
+] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+export function isUserRole(value: unknown): value is UserRole {
+  return (
+    typeof value === "string" &&
+    USER_ROLES.includes(value as UserRole)
+  );
+}
+
 export type LoginCredentials = {
   email: string;
   password: string;
@@ -8,8 +27,10 @@ export type SessionUser = {
   email: string;
   nom: string;
   prenom: string;
-  role: string;
+  role: UserRole;
   companyId: string | number | null;
+  /** Present in GET /auth/me; absent from the login SessionResponse. */
+  company?: { id: number; nom: string };
 };
 
 export type SessionResponse = {

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
@@ -30,10 +30,11 @@ export function Button({ label, onPress, disabled, children }: ButtonProps) {
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: colors.brand[700],
     borderRadius: 8,
     padding: spacing.md,
   },
   dimmed: { opacity: 0.7 },
   label: { color: "#FFFFFF", fontWeight: "600" },
 });
+

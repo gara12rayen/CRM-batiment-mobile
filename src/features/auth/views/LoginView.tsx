@@ -258,7 +258,9 @@ export default function LoginView({
 
           {/* Submit button */}
           <Pressable
-            onPress={handleSubmit(submit)}
+            onPress={() => {
+             void handleSubmit(submit)();
+            }}
             disabled={isLoading}
             accessibilityRole="button"
             accessibilityLabel="Se connecter"
