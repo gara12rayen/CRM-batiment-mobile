@@ -19,6 +19,10 @@ export default function RootLayout() {
           name="(auth)/forgot-password"
           options={{ title: "Mot de passe oublié" }}
         />
+        <Stack.Screen
+          name="permissions-test"
+          options={{ title: "Autorisations (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>
