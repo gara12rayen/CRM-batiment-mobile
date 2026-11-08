@@ -64,3 +64,4 @@ export function useUserLocation(options: UseUserLocationOptions = {}) {
     checkPermissionStatus,
   };
 }
+

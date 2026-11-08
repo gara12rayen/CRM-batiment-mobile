@@ -12,3 +12,4 @@ export * from "./components/BoutonAppeler";
 export * from "./components/BoutonItineraire";
 export * from "./components/LocationDeniedNotice";
 export * from "./views/LocationContactTestView";
+
