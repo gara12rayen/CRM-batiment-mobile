@@ -23,6 +23,10 @@ export default function RootLayout() {
           name="permissions-test"
           options={{ title: "Autorisations (Socle 1B)" }}
         />
+        <Stack.Screen
+          name="location-contact-test"
+          options={{ title: "Localisation & Contact (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>

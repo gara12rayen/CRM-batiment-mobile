@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from "expo-router";
-import { Pressable, Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { colors } from "@/core/theme/colors";
 
 export default function TabsLayout() {
@@ -12,20 +12,35 @@ export default function TabsLayout() {
         options={{
           title: "Accueil",
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/permissions-test")}
-              style={{
-                marginRight: 16,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                backgroundColor: colors.primary,
-                borderRadius: 8,
-              }}
-            >
-              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 13 }}>
-                🔐 Autorisations
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: 6, marginRight: 12 }}>
+              <Pressable
+                onPress={() => router.push("/permissions-test")}
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
+                  backgroundColor: "#E5E7EB",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 12 }}>
+                  🔐 Perms
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/location-contact-test")}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  backgroundColor: colors.primary,
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 12 }}>
+                  📍 GPS & Contact
+                </Text>
+              </Pressable>
+            </View>
           ),
         }}
       />
