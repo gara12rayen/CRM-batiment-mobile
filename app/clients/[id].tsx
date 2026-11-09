@@ -179,6 +179,18 @@ export default function ClientDetailsRoute() {
     }
   };
 
+  const canCreateQuote = user !== null && permissions.canManageQuotes(user.role);
+
+  // New draft quote for this client, saved in the database through the API
+  const handleCreateQuote = () => {
+    if (!client || !canCreateQuote) return;
+
+    router.push({
+      pathname: "/devis/create",
+      params: { clientId: String(client.id) },
+    });
+  };
+
   const handleEdit = () => {
     if (!client || !canManageClients) return;
 
@@ -311,6 +323,15 @@ export default function ClientDetailsRoute() {
               <Text style={styles.actionButtonText}>✎ Modifier</Text>
             </Pressable>
           )}
+
+          {canCreateQuote && (
+            <Pressable
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleCreateQuote}
+            >
+              <Text style={styles.actionButtonText}>＋ Devis</Text>
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -389,7 +410,11 @@ export default function ClientDetailsRoute() {
             const devisStatus = getStatusColor(devis.statut);
 
             return (
-              <View key={devis.id} style={styles.historyCard}>
+              <Pressable
+                key={devis.id}
+                style={styles.historyCard}
+                onPress={() => router.push(`/devis/${devis.id}`)}
+              >
                 <View style={styles.historyHeader}>
                   <Text style={styles.historyTitle}>
                     {devis.reference || `Devis #${devis.id}`}
@@ -414,7 +439,7 @@ export default function ClientDetailsRoute() {
                 <Text style={styles.historyDate}>
                   Créé le {formatDate(devis.createdAt)}
                 </Text>
-              </View>
+              </Pressable>
             );
           })
         ) : (

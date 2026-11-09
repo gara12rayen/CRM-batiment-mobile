@@ -30,6 +30,14 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
+/** The API answers errors as { message } with a French message ready to show. */
+function messageApi(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const { message } = data as { message?: unknown };
+  if (Array.isArray(message)) return message.filter((m) => typeof m === "string").join("\n");
+  return typeof message === "string" ? message : undefined;
+}
+
 // Centraliser la gestion des erreurs API.
 apiClient.interceptors.response.use(
   (response) => response,
@@ -38,7 +46,8 @@ apiClient.interceptors.response.use(
       if (error.response) {
         return Promise.reject(
           new ApiError(
-            `La requête API a échoué (${error.response.status}).`,
+            messageApi(error.response.data) ??
+              `La requête API a échoué (${error.response.status}).`,
             error.response.status,
           ),
         );
@@ -57,6 +66,11 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/** Message to show to the user for any error. */
+export function getErrorMessage(error: unknown, fallback = "Une erreur est survenue. Veuillez réessayer."): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 // Fonction générique pour récupérer directement les données de l'API.
 export async function apiRequest<T>(url: string): Promise<T> {
