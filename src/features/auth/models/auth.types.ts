@@ -10,6 +10,24 @@ export type SessionUser = {
   prenom: string;
   role: string;
   companyId: string | number | null;
+  telephone?: string | null;
+};
+
+export type Profile = SessionUser & {
+  signatureUpdatedAt?: string | null;
+};
+
+export type UpdateProfileInput = {
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
+  currentPassword?: string;
+};
+
+export type Signature = {
+  signatureBase64: string | null;
+  signatureUpdatedAt: string | null;
 };
 
 export type SessionResponse = {

@@ -24,7 +24,7 @@ apiClient.interceptors.request.use(async (config) => {
   const token = await secureStorage.getItem("accessToken");
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = ["Bearer", token].join(" ");
   }
 
   return config;
@@ -40,12 +40,14 @@ apiClient.interceptors.response.use(
           notifySessionExpired();
         }
 
-        return Promise.reject(
-          new ApiError(
-            `La requête API a échoué (${error.response.status}).`,
-            error.response.status,
-          ),
-        );
+        const responseMessage = error.response.data?.message;
+        const message = Array.isArray(responseMessage)
+          ? responseMessage.join(" ")
+          : typeof responseMessage === "string"
+            ? responseMessage
+            : `La requête API a échoué (${error.response.status}).`;
+
+        return Promise.reject(new ApiError(message, error.response.status));
       }
 
       if (error.request) {

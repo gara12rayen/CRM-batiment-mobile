@@ -32,6 +32,10 @@ export async function getSessionUser() {
   }
 }
 
+export async function updateStoredUser(user: SessionResponse["user"]) {
+  await secureStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export async function savePasswordChangeToken(token: string) {
   await secureStorage.setItem(PASSWORD_CHANGE_TOKEN_KEY, token);
 }
