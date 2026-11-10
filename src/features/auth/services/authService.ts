@@ -12,6 +12,7 @@ import type {
   VerifyResetCodeResponse,
   ResetPasswordCredentials,
 } from "@/features/auth/models/auth.types";
+import type { SessionUser } from "@/features/auth/models/auth.types";
 
 /**
  * Authenticates a user with the backend API.
@@ -37,6 +38,10 @@ export async function login(
  * Extracts the HTTP status code from an Axios error.
  */
 export function getLoginErrorStatus(error: unknown): number | null {
+  if (error instanceof ApiError) {
+    return error.status;
+  }
+
   if (axios.isAxiosError(error)) {
     return error.response?.status ?? null;
   }
@@ -60,6 +65,11 @@ export async function changePassword(
     },
   );
 
+  return response.data;
+}
+
+export async function getCurrentUser(): Promise<SessionUser> {
+  const response = await apiClient.get<SessionUser>("/auth/me");
   return response.data;
 }
 

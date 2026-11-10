@@ -1,34 +1,53 @@
-import * as SecureStore from "expo-secure-store";
 import type { SessionResponse } from "@/features/auth/models/auth.types";
+import { secureStorage } from "@/core/storage/secure-storage";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const USER_KEY = "sessionUser";
 const PASSWORD_CHANGE_TOKEN_KEY = "passwordChangeToken";
 
 export async function saveSession(session: SessionResponse) {
-  await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, session.accessToken);
-  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(session.user));
-  await SecureStore.deleteItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
+  await Promise.all([
+    secureStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken),
+    secureStorage.setItem(USER_KEY, JSON.stringify(session.user)),
+    secureStorage.deleteItem(PASSWORD_CHANGE_TOKEN_KEY),
+  ]);
 }
 
 export async function getAccessToken() {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  return secureStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 export async function getSessionUser() {
-  const user = await SecureStore.getItemAsync(USER_KEY);
+  const user = await secureStorage.getItem(USER_KEY);
 
-  return user ? JSON.parse(user) : null;
+  if (!user) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(user);
+  } catch {
+    await clearSession();
+    return null;
+  }
 }
 
 export async function savePasswordChangeToken(token: string) {
-  await SecureStore.setItemAsync(PASSWORD_CHANGE_TOKEN_KEY, token);
+  await secureStorage.setItem(PASSWORD_CHANGE_TOKEN_KEY, token);
 }
 
 export async function getPasswordChangeToken() {
-  return SecureStore.getItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
+  return secureStorage.getItem(PASSWORD_CHANGE_TOKEN_KEY);
 }
 
 export async function clearPasswordChangeToken() {
-  await SecureStore.deleteItemAsync(PASSWORD_CHANGE_TOKEN_KEY);
+  await secureStorage.deleteItem(PASSWORD_CHANGE_TOKEN_KEY);
+}
+
+export async function clearSession() {
+  await Promise.all([
+    secureStorage.deleteItem(ACCESS_TOKEN_KEY),
+    secureStorage.deleteItem(USER_KEY),
+    clearPasswordChangeToken(),
+  ]);
 }

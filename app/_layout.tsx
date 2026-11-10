@@ -2,10 +2,12 @@ import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/core/theme/colors";
+import { SessionLifecycle } from "@/features/auth/components/SessionLifecycle";
 
 export default function RootLayout() {
   return (
     <>
+      <SessionLifecycle />
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -24,9 +26,9 @@ export default function RootLayout() {
           name="+not-found"
           options={{ title: "Page introuvable" }}
         />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="verify-reset-code" />
-        <Stack.Screen name="reset-password" />
+        <Stack.Screen name="(auth)/forgot-password" />
+        <Stack.Screen name="(auth)/verify-reset-code" />
+        <Stack.Screen name="(auth)/reset-password" />
       </Stack>
     </>
   );
