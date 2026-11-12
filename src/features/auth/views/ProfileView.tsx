@@ -27,9 +27,12 @@ import {
 } from "@/features/auth/services/authService";
 import { clearSession, updateStoredUser } from "@/features/auth/services/authStorage";
 import type { Profile } from "@/features/auth/models/auth.types";
+import { useAccess } from "@/features/access/AccessProvider";
 
 export function ProfileView() {
   const router = useRouter();
+  const { has } = useAccess();
+  const canEditSignature = has("signature");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [newSignature, setNewSignature] = useState<string | null>(null);
@@ -55,12 +58,14 @@ export function ProfileView() {
       setPrenom(loadedProfile.prenom);
       setEmail(loadedProfile.email);
       setTelephone(loadedProfile.telephone ?? "");
-      try {
-        const loadedSignature = await getSignature();
-        setSignature(loadedSignature.signatureBase64);
-      } catch (error) {
-        if (!(error instanceof ApiError) || ![403, 404].includes(error.status)) {
-          throw error;
+      if (has("signature")) {
+        try {
+          const loadedSignature = await getSignature();
+          setSignature(loadedSignature.signatureBase64);
+        } catch (error) {
+          if (!(error instanceof ApiError) || ![403, 404].includes(error.status)) {
+            throw error;
+          }
         }
       }
     } catch (error) {
@@ -235,6 +240,7 @@ export function ProfileView() {
           </View>
         </View>
 
+        {canEditSignature ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Signature du conseiller</Text>
           {signature && <Image accessibilityLabel="Signature enregistrée" source={{ uri: signature }} style={styles.signature} />}
@@ -242,6 +248,7 @@ export function ProfileView() {
           <Button disabled={isSaving} label="Enregistrer la signature" onPress={() => void handleSaveSignature()} />
           {signature && <Button disabled={isSaving} label="Supprimer la signature" onPress={() => void handleDeleteSignature()} />}
         </View>
+        ) : null}
 
         <View style={styles.logout}>
           <Button label="Se déconnecter" onPress={handleLogout} />

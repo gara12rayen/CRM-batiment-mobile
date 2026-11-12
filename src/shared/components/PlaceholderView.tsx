@@ -29,15 +29,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: spacing.lg,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   title: {
     ...typography.title,
-    color: colors.text,
+    color: colors.text.DEFAULT,
     marginBottom: spacing.sm,
   },
   description: {
     ...typography.body,
-    color: colors.muted,
+    color: colors.text.muted,
   },
 });

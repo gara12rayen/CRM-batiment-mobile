@@ -5,7 +5,8 @@ L'application utilise React Native, Expo, TypeScript strict et Expo Router.
 - `app/` contient uniquement les routes et layouts Expo Router. Les écrans des onglets et les vues fonctionnelles délèguent vers `src/features/`.
 - `src/core/` regroupe les préoccupations transverses : client HTTP, configuration d'environnement, stockage sécurisé et thème.
 - `src/shared/` accueillera les composants, hooks, types et utilitaires réutilisables.
-- `src/features/` isole les domaines auth, dashboard, clients, prospects, devis, catalogue, chantiers et notifications. Chaque domaine peut contenir `models/`, `views/`, `viewmodels/`, `services/` et `components/` selon le besoin.
+- `src/features/` isole les domaines auth, access, dashboard, clients, prospects, devis, catalogue, chantiers et notifications. Chaque domaine peut contenir `models/`, `views/`, `viewmodels/`, `services/` et `components/` selon le besoin.
+- Les menus et onglets sont générés par `src/features/access/` à partir du tableau des droits (`docs/rbac-matrix.md`) et du profil connecté (rôle × type d’entreprise × mode de chantier).
 - `assets/` est réservé aux images, icônes et polices.
 
 Les écrans actuels sont des placeholders. Dans le flux MVVM, les routes affichent les vues, les vues observent des viewmodels (hooks React), les viewmodels orchestrent les services et les modèles décrivent les données. Les viewmodels/services seront ajoutés avec les besoins métier correspondants.

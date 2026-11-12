@@ -11,6 +11,7 @@ import {
 
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
+import { useAccess } from "@/features/access/AccessProvider";
 
 type MetricCardProps = {
   title: string;
@@ -149,6 +150,10 @@ function QuoteStatusRow({
 export function DashboardView() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { has, profile } = useAccess();
+  const canProspects = has("demandes.read");
+  const canDevis = has("devis.read");
+  const canChantiers = has("chantiers.read");
 
   // Deux colonnes sur téléphone, trois sur les écrans larges.
   const columns = width >= 700 ? 3 : 2;
@@ -169,6 +174,12 @@ export function DashboardView() {
 
   const openRequests = () => router.push("/prospects");
   const openQuotes = () => router.push("/devis");
+  const openChantiers = () => router.push("/chantiers");
+
+  const welcomeEyebrow =
+    profile.role === "CHEF_CHANTIER" || profile.role === "SOUS_TRAITANT"
+      ? "ESPACE CHANTIER"
+      : "ESPACE COMMERCIAL";
 
   return (
     <ScrollView
@@ -179,7 +190,7 @@ export function DashboardView() {
       {/* En-tête */}
       <View style={styles.welcomeCard}>
         <Text style={styles.welcomeEyebrow}>
-          ESPACE COMMERCIAL
+          {welcomeEyebrow}
         </Text>
 
         <Text style={styles.welcomeTitle}>
@@ -192,8 +203,29 @@ export function DashboardView() {
         </Text>
       </View>
 
+      {canChantiers && !canProspects ? (
+        <View style={styles.section}>
+          <SectionTitle
+            title="Chantiers"
+            action="Voir tout"
+            onPress={openChantiers}
+          />
+          <View style={styles.metricsGrid}>
+            <View style={{ width: cardWidth }}>
+              <MetricCard
+                title="Chantiers"
+                value="—"
+                description="Chantiers de votre périmètre"
+                color="#0F766E"
+                onPress={openChantiers}
+              />
+            </View>
+          </View>
+        </View>
+      ) : null}
+
       {/* SECTION 1 : DEMANDES */}
-      <View style={styles.section}>
+      {canProspects ? <View style={styles.section}>
         <SectionTitle
           title="Demandes à traiter"
           action="Voir tout"
@@ -243,10 +275,10 @@ export function DashboardView() {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </View> : null}
 
       {/* SECTION 2 : DEVIS */}
-      <View style={styles.section}>
+      {canDevis ? <View style={styles.section}>
         <SectionTitle
           title="Devis par statut"
           action="Voir tout"
@@ -289,10 +321,10 @@ export function DashboardView() {
             aux API du backend.
           </Text>
         </View>
-      </View>
+      </View> : null}
 
       {/* SECTION 3 : VISITES */}
-      <View style={styles.section}>
+      {canProspects ? <View style={styles.section}>
         <SectionTitle title="Visites programmées" />
 
         <View style={styles.metricsGrid}>
@@ -316,10 +348,10 @@ export function DashboardView() {
             description="Le planning apparaîtra ici après l'intégration des données de visites."
           />
         </View>
-      </View>
+      </View> : null}
 
       <Text style={styles.footer}>
-        CRM Bâtiment · Tableau de bord commercial
+        CRM Bâtiment · Tableau de bord
       </Text>
     </ScrollView>
   );

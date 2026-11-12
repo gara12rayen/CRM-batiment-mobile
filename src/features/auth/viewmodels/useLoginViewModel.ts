@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { Alert, Linking } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 
-import { login, getLoginErrorStatus } from "@/features/auth/services/authService";
+import { resolveAccess, resolveDefaultTabHref } from "@/features/access/accessEngine";
+import { login, getCurrentUser, getLoginErrorStatus } from "@/features/auth/services/authService";
 import {
   isPasswordChangeRequired,
   type LoginCredentials,
+  type SessionUser,
 } from "@/features/auth/models/auth.types";
 import {
   saveSession,
   savePasswordChangeToken,
+  updateStoredUser,
+  clearSession,
 } from "@/features/auth/services/authStorage";
-
-const WEB_APP_URL = process.env.EXPO_PUBLIC_APP_URL;
 
 export function useLoginViewModel() {
   const router = useRouter();
@@ -35,35 +36,24 @@ export function useLoginViewModel() {
 
       await saveSession(result);
 
-      if (result.user.role === "ASSISTANTE") {
-        if (!WEB_APP_URL) {
-          Alert.alert(
-            "Configuration manquante",
-            "L'adresse de l'application n'est pas configurée.",
-          );
-          return;
-        }
+      let user: SessionUser = result.user;
+      try {
+        user = await getCurrentUser();
+        await updateStoredUser(user);
+      } catch {
+        user = result.user;
+      }
 
-        Alert.alert(
-          "Accès sur ordinateur",
-          "Votre rôle nécessite d'utiliser la version web de l'application.",
-          [
-            {
-              text: "Ouvrir",
-              onPress: () => {
-                void Linking.openURL(WEB_APP_URL).catch(() => {
-                  Alert.alert("Erreur", "Impossible d'ouvrir l'application.");
-                });
-              },
-            },
-            { text: "Annuler", style: "cancel" },
-          ],
+      const profile = resolveAccess(user);
+      if (!profile.canUseApp) {
+        await clearSession();
+        router.replace(
+          `/access-denied?code=${profile.denyCode ?? "ROLE_WEB_ONLY"}` as Href,
         );
-
         return;
       }
 
-      router.replace("/(tabs)");
+      router.replace(resolveDefaultTabHref(profile) as Href);
     } catch (error) {
       const status = getLoginErrorStatus(error);
 

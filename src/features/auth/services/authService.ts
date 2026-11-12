@@ -44,7 +44,11 @@ export async function changePassword(
 
 export async function getCurrentUser(): Promise<SessionUser> {
   const response = await apiClient.get<SessionUser>("/auth/me");
-  return response.data;
+  const profile = response.data;
+  return {
+    ...profile,
+    companyId: profile.companyId ?? profile.company?.id ?? null,
+  };
 }
 
 export async function getProfile(): Promise<Profile> {

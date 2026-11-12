@@ -3,6 +3,14 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type SessionCompany = {
+  id: string | number;
+  nom: string;
+  type?: string | null;
+  chantierMode?: string | null;
+  modeChantier?: string | null;
+};
+
 export type SessionUser = {
   id: string | number;
   email: string;
@@ -11,6 +19,7 @@ export type SessionUser = {
   role: string;
   companyId: string | number | null;
   telephone?: string | null;
+  company?: SessionCompany | null;
 };
 
 export type Profile = SessionUser & {

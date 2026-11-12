@@ -1,5 +1,6 @@
-import type { SessionResponse } from "@/features/auth/models/auth.types";
+import type { SessionResponse, SessionUser } from "@/features/auth/models/auth.types";
 import { secureStorage } from "@/core/storage/secure-storage";
+import { notifySessionChanged } from "@/features/auth/services/sessionEvents";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const USER_KEY = "sessionUser";
@@ -11,13 +12,14 @@ export async function saveSession(session: SessionResponse) {
     secureStorage.setItem(USER_KEY, JSON.stringify(session.user)),
     secureStorage.deleteItem(PASSWORD_CHANGE_TOKEN_KEY),
   ]);
+  notifySessionChanged();
 }
 
 export async function getAccessToken() {
   return secureStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export async function getSessionUser() {
+export async function getSessionUser(): Promise<SessionUser | null> {
   const user = await secureStorage.getItem(USER_KEY);
 
   if (!user) {
@@ -25,7 +27,7 @@ export async function getSessionUser() {
   }
 
   try {
-    return JSON.parse(user);
+    return JSON.parse(user) as SessionUser;
   } catch {
     await clearSession();
     return null;
@@ -34,6 +36,7 @@ export async function getSessionUser() {
 
 export async function updateStoredUser(user: SessionResponse["user"]) {
   await secureStorage.setItem(USER_KEY, JSON.stringify(user));
+  notifySessionChanged();
 }
 
 export async function savePasswordChangeToken(token: string) {
@@ -54,4 +57,5 @@ export async function clearSession() {
     secureStorage.deleteItem(USER_KEY),
     clearPasswordChangeToken(),
   ]);
+  notifySessionChanged();
 }
