@@ -27,6 +27,10 @@ export default function RootLayout() {
           name="location-contact-test"
           options={{ title: "Localisation & Contact (Socle 1B)" }}
         />
+        <Stack.Screen
+          name="qr-code-test"
+          options={{ title: "QR Code Devis (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>

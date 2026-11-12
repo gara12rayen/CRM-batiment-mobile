@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+import { type Href, Tabs, useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { colors } from "@/core/theme/colors";
 
@@ -22,22 +22,36 @@ export default function TabsLayout() {
                   borderRadius: 6,
                 }}
               >
-                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 12 }}>
-                  🔐 Perms
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 11 }}>
+                  🔐
                 </Text>
               </Pressable>
 
               <Pressable
                 onPress={() => router.push("/location-contact-test")}
                 style={{
-                  paddingHorizontal: 10,
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
+                  backgroundColor: "#E5E7EB",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 11 }}>
+                  📍
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/qr-code-test" as Href)}
+                style={{
+                  paddingHorizontal: 8,
                   paddingVertical: 5,
                   backgroundColor: colors.primary,
                   borderRadius: 6,
                 }}
               >
-                <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 12 }}>
-                  📍 GPS & Contact
+                <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 11 }}>
+                  📷 QR
                 </Text>
               </Pressable>
             </View>
