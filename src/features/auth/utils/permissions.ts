@@ -6,8 +6,9 @@ export const permissions = {
   canAccessCommercial: (role: UserRole) =>
     ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
 
+  // Comme l'API (décision du 29/10) : le chef de chantier n'a pas accès aux clients (403)
   canReadClients: (role: UserRole) =>
-    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+    ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
 
   // Consultation des devis
   canReadQuotes: (role: UserRole) =>
@@ -72,11 +73,13 @@ export const permissions = {
     ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
 
   // Factures
+  // Comme l'API : factures lues par le bureau (le chef reçoit 403), modifiées par ADMIN et ASSISTANTE
+  // (le TECHNICO les consulte seulement)
   canReadInvoices: (role: UserRole) =>
-    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+    ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
 
   canManageInvoices: (role: UserRole) =>
-    ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
+    ["ADMIN", "ASSISTANTE"].includes(role),
 
   canReadCompanySettings: (role: UserRole) =>
     ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),

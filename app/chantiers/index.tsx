@@ -1,6 +1,7 @@
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
+import { ChantiersView } from "@/features/chantiers/views/ChantiersView";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
 export default function ChantiersRoute() {
@@ -27,10 +28,5 @@ export default function ChantiersRoute() {
     );
   }
 
-  return (
-    <PlaceholderView
-      title="Chantiers"
-      description="Liste des chantiers à venir."
-    />
-  );
+  return <ChantiersView />;
 }

@@ -85,4 +85,3 @@ Comptes créés par `pnpm db:seed` (mots de passe de test, **jamais en productio
 | FOURNISSEUR | fournisseur@batiment-pro.fr | Fournisseur@2026! |
 
 ---
-

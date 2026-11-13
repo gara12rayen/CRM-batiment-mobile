@@ -1,10 +1,13 @@
-
 import { ActivityIndicator, View } from "react-native";
 import { Redirect, Tabs } from "expo-router";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { permissions } from "@/features/auth/utils/permissions";
+import { ongletVisible, type OngletNom } from "@/features/auth/utils/navigation";
 
+/**
+ * Barre de navigation inférieure. Les onglets de chaque rôle sont définis dans
+ * src/features/auth/utils/navigation.ts (ONGLETS_PAR_ROLE) ; les autres sont masqués (href: null).
+ */
 export default function TabsLayout() {
   const { user, isLoading } = useAuth();
 
@@ -20,69 +23,21 @@ export default function TabsLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  const isCommercial = permissions.canAccessCommercial(user.role);
-  const canReadClients = permissions.canReadClients(user.role);
-  const canReadQuotes = permissions.canReadQuotes(user.role);
-  const canAccessExecution = permissions.canAccessExecution(user.role);
+  const href = (onglet: OngletNom) => (ongletVisible(user.role, onglet) ? undefined : null);
 
   return (
     <Tabs screenOptions={{ headerShown: true }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Accueil",
-          href: isCommercial ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="clients"
-        options={{
-          title: "Clients",
-          href: canReadClients ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="prospects"
-        options={{
-          title: "Prospects",
-          href: isCommercial ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="devis"
-        options={{
-          title: "Devis",
-          href: canReadQuotes ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="execution"
-        options={{
-          title: "Exécution",
-          href: canAccessExecution ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="portail"
-        options={{
-          title: "Portail",
-          href:
-            permissions.canAccessSupplierOrders(user.role) ||
-            permissions.canAccessSubcontractorPortal(user.role)
-              ? undefined
-              : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{ title: "Profil" }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Accueil", href: href("index") }} />
+      <Tabs.Screen name="clients" options={{ title: "Clients", href: href("clients") }} />
+      <Tabs.Screen name="prospects" options={{ title: "Prospects", href: href("prospects") }} />
+      <Tabs.Screen name="devis" options={{ title: "Devis", href: href("devis") }} />
+      <Tabs.Screen name="chantiers" options={{ title: "Chantiers", href: href("chantiers") }} />
+      <Tabs.Screen name="planning" options={{ title: "Planning", href: href("planning") }} />
+      <Tabs.Screen name="sav" options={{ title: "SAV", href: href("sav") }} />
+      <Tabs.Screen name="portail" options={{ title: "Portail", href: href("portail") }} />
+      <Tabs.Screen name="profile" options={{ title: "Profil", href: href("profile") }} />
+      {/* Ancien onglet « Exécution » : son contenu (tableau de bord du chef) est maintenant l'Accueil du chef */}
+      <Tabs.Screen name="execution" options={{ title: "Exécution", href: null }} />
     </Tabs>
   );
 }

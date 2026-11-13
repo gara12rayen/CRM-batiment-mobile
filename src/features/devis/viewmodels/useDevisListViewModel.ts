@@ -31,7 +31,11 @@ export function useDevisListViewModel() {
         setTotalPages(res.meta.totalPages);
         setError(null);
       } catch (e) {
-        if (id === requete.current) setError(getErrorMessage(e, "Impossible de charger les devis."));
+        if (id === requete.current) {
+          // Nouvelle recherche / nouveau filtre en erreur : ne pas laisser l'ancienne liste affichée
+          if (mode === "remplacer") setDevis([]);
+          setError(getErrorMessage(e, "Impossible de charger les devis."));
+        }
       } finally {
         if (id === requete.current) {
           setLoading(false);

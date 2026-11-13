@@ -1,7 +1,9 @@
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
+import { ChefDashboardView } from "@/features/dashboard/views/ChefDashboardView";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
+/** Onglet « Exécution » : tableau de bord du chef de chantier (le bureau y voit tous les chantiers). */
 export default function ExecutionRoute() {
   const { user } = useAuth();
   const allowed = user !== null && permissions.canAccessExecution(user.role);
@@ -15,10 +17,5 @@ export default function ExecutionRoute() {
     );
   }
 
-  return (
-    <PlaceholderView
-      title="Mode exécution"
-      description="Le suivi opérationnel des chantiers sera intégré dans une prochaine étape."
-    />
-  );
+  return <ChefDashboardView />;
 }

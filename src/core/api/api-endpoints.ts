@@ -8,5 +8,9 @@ export const apiEndpoints = {
   devis: "/devis",
   catalogue: "/catalogue",
   chantiers: "/chantiers",
+  planning: "/planning",
+  commandesFournisseur: "/commandes-fournisseur",
+  sav: "/sav",
+  usersOptions: "/users/options",
   notifications: "/notifications",
 } as const;
