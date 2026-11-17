@@ -46,12 +46,26 @@ export default function TabsLayout() {
                 style={{
                   paddingHorizontal: 8,
                   paddingVertical: 5,
+                  backgroundColor: "#E5E7EB",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 11 }}>
+                  📷 QR
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/offline-sync-test" as Href)}
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
                   backgroundColor: colors.primary,
                   borderRadius: 6,
                 }}
               >
                 <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 11 }}>
-                  📷 QR
+                  📤 Différé
                 </Text>
               </Pressable>
             </View>

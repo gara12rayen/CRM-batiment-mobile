@@ -31,6 +31,10 @@ export default function RootLayout() {
           name="qr-code-test"
           options={{ title: "QR Code Devis (Socle 1B)" }}
         />
+        <Stack.Screen
+          name="offline-sync-test"
+          options={{ title: "Envoi Différé (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>
