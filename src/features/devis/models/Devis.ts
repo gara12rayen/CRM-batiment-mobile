@@ -29,7 +29,33 @@ export const DEVIS_STATUT: Record<DevisStatut, { label: string; couleur: string;
 /** Same rule as the API: lines, VAT and notes can only change on a draft or revised quote. */
 export const DEVIS_REGLES = {
   modifiable: ["BROUILLON", "REVISE"] as DevisStatut[],
+  /** Envoyer par email / remis au client (BROUILLON → ENVOYE, REVISE → RENVOYE) */
+  envoyable: ["BROUILLON", "REVISE"] as DevisStatut[],
+  /** Waiting for the client's answer: WhatsApp link and « refused by the client » */
+  enAttenteClient: ["ENVOYE", "RENVOYE"] as DevisStatut[],
+  /** Signature on the advisor's phone (POST /devis/:id/signer-sur-place) */
+  signableSurPlace: ["ENVOYE", "RENVOYE", "ACCEPTE"] as DevisStatut[],
 };
+
+/** Which actions the detail screen shows for a quote (the API checks the same rules again). */
+export function actionsDisponibles(d: Pick<DevisDetail, "statut" | "lignes" | "client">) {
+  const envoyable = DEVIS_REGLES.envoyable.includes(d.statut);
+  const enAttente = DEVIS_REGLES.enAttenteClient.includes(d.statut);
+  return {
+    envoyer: envoyable,
+    remettre: envoyable,
+    whatsapp: enAttente,
+    refuser: enAttente,
+    /** Why « Envoyer » cannot work yet (null = ok) */
+    blocageEnvoi: !d.lignes.length
+      ? "Ajoutez au moins une ligne avant d’envoyer."
+      : !d.client.email
+        ? "Le client n’a pas d’email : utilisez « Remis au client » ou ajoutez un email."
+        : null,
+    blocageRemise: !d.lignes.length ? "Ajoutez au moins une ligne avant de remettre le devis." : null,
+    blocageWhatsapp: !d.client.telephone ? "Le client n’a pas de numéro de téléphone." : null,
+  };
+}
 
 export type DevisLigne = {
   id: number;
@@ -44,6 +70,8 @@ export type DevisLigne = {
   /** Absent for a chef de chantier (no amounts) */
   prixUnitaireVente?: number;
   totalHT?: number;
+  /** Bureau only: cost of the line (materials + labour), used for the margin */
+  coutTotal?: number | string;
 };
 
 export type DevisDetail = {
@@ -59,6 +87,8 @@ export type DevisDetail = {
   totalHT?: number;
   totalTVA?: number;
   totalTTC?: number;
+  /** Bureau only: margin of the whole quote, in % */
+  margePourcent?: number | string | null;
   client: {
     id: number;
     nom: string;
@@ -68,6 +98,10 @@ export type DevisDetail = {
     adresseChantier?: string | null;
   };
   createur?: { id: number; nom: string; prenom: string } | null;
+  /** The request this quote comes from (bureau only) */
+  demandeDevis?: { id: number; reference: string; description: string } | null;
+  /** Job site created at the signature */
+  chantier?: { id: number; reference: string; statut: string } | null;
   lignes: DevisLigne[];
 };
 
@@ -84,6 +118,8 @@ export type DevisListItem = {
   dateEnvoi: string | null;
   totalHT?: number;
   totalTTC?: number;
+  /** Bureau only: margin of the whole quote, in % */
+  margePourcent?: number | string | null;
   client: { id: number; nom: string; prenom: string | null; telephone?: string | null };
 };
 

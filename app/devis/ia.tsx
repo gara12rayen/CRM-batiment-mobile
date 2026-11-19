@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { apiClient } from "@/core/api/api-client";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
+import type { DevisDetail } from "@/features/devis/models/Devis";
+import { getDevis } from "@/features/devis/services/devis.service";
+import { DevisIAView } from "@/features/devis-ia/views/DevisIAView";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
+/** /devis/ia?id=… — checks the draft and the role, then opens the Devis IA. */
 export default function DevisIARoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { user, isLoading } = useAuth();
-  const [quoteStatus, setQuoteStatus] = useState<string | null>(null);
+  const [devis, setDevis] = useState<Pick<DevisDetail, "statut" | "createur"> | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
 
   useEffect(() => {
@@ -19,13 +22,12 @@ export default function DevisIARoute() {
     }
 
     let active = true;
-    apiClient
-      .get<{ statut: string }>(`/devis/${id}`)
-      .then(({ data }) => {
-        if (active) setQuoteStatus(data.statut);
+    getDevis(Number(id))
+      .then((d) => {
+        if (active) setDevis({ statut: d.statut, createur: d.createur });
       })
       .catch(() => {
-        if (active) setQuoteStatus(null);
+        if (active) setDevis(null);
       })
       .finally(() => {
         if (active) setLoadingQuote(false);
@@ -47,20 +49,20 @@ export default function DevisIARoute() {
   if (
     !user ||
     !id ||
-    !permissions.canUseDevisIAForQuote(user.role, quoteStatus)
+    !permissions.canUseDevisIAForQuote(user.role, devis?.statut, { createurId: devis?.createur?.id, userId: user.id })
   ) {
     return (
       <PlaceholderView
         title="Accès non autorisé"
-        description="Le Devis IA est réservé à l’admin, au technico et à l’assistante, uniquement sur un devis en brouillon."
+        description="Le Devis IA se fait uniquement sur un devis en brouillon. Le chef de chantier l’utilise seulement sur les brouillons qu’il a créés."
       />
     );
   }
 
   return (
-    <PlaceholderView
-      title="Devis IA"
-      description={id ? `Assistant IA pour le devis ${id}.` : "Ouvrez le Devis IA depuis un devis existant."}
-    />
+    <>
+      <Stack.Screen options={{ title: "Devis IA" }} />
+      <DevisIAView id={Number(id)} />
+    </>
   );
 }

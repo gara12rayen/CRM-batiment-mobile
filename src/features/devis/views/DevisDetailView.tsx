@@ -2,17 +2,26 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { formatDate, formatEuros, formatUnite, fullName } from "@/shared/utils/format";
+import { DevisActions } from "../components/DevisActions";
 import { LigneEditModal } from "../components/LigneEditModal";
+import { RefusModal } from "../components/RefusModal";
 import { DEVIS_STATUT, TAUX_TVA, type DevisDetail } from "../models/Devis";
+import { useDevisActionsViewModel } from "../viewmodels/useDevisActionsViewModel";
 import { useDevisDetailViewModel } from "../viewmodels/useDevisDetailViewModel";
 import { useDevisEditionViewModel } from "../viewmodels/useDevisEditionViewModel";
 
-/** A quote: client, lines (editable on a draft), VAT, totals and internal notes. */
+/** A quote: client, lines (editable on a draft), VAT, totals, internal notes and actions (send, WhatsApp, PDF…). */
 export function DevisDetailView({ id, footer }: { id: number; footer?: (devis: DevisDetail) => ReactNode }) {
   const vm = useDevisDetailViewModel(id);
   const ed = useDevisEditionViewModel(vm.devis, vm.setDevis);
+  const ac = useDevisActionsViewModel(vm.devis, vm.setDevis);
+  const { user } = useAuth();
+  const peutAgir = !!user && permissions.canSendQuotes(user.role);
+  const peutPdf = !!user && permissions.canDownloadQuotePdf(user.role);
   const d = vm.devis;
   const [notes, setNotes] = useState("");
   useEffect(() => setNotes(d?.notes ?? ""), [d?.notes]);
@@ -125,10 +134,25 @@ export function DevisDetailView({ id, footer }: { id: number; footer?: (devis: D
           </View>
         ) : null}
 
+        {/* Actions (bureau only: the chef de chantier never sends a quote nor sees the PDF with prices) */}
+        {peutAgir || peutPdf ? (
+          <DevisActions
+            peutPdf={peutPdf}
+            dispo={peutAgir ? ac.dispo : null}
+            enCours={ac.enCours}
+            onPdf={ac.ouvrirPdf}
+            onEnvoyer={ac.envoyer}
+            onRemettre={ac.remettre}
+            onWhatsapp={ac.partagerWhatsapp}
+            onRefuser={ac.ouvrirRefus}
+          />
+        ) : null}
+
         {footer?.(d)}
       </ScrollView>
 
       <LigneEditModal ligne={ed.ligneOuverte} enregistrement={ed.enregistrement} onFermer={ed.fermerLigne} onEnregistrer={(q, p) => void ed.modifierLigneOuverte(q, p)} onSupprimer={ed.supprimerLigneOuverte} />
+      <RefusModal visible={ac.refusOuvert} enCours={ac.enCours === "refuser"} onFermer={ac.fermerRefus} onConfirmer={(m) => void ac.confirmerRefus(m)} />
     </>
   );
 }

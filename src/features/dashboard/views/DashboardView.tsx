@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +16,9 @@ import { spacing } from "@/core/theme/spacing";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
+import { formatDate, formatEuros, fullName } from "@/shared/utils/format";
+import { DEMANDE_STATUT } from "../models/CommercialDashboard";
+import { useCommercialDashboardViewModel } from "../viewmodels/useCommercialDashboardViewModel";
 
 type MetricCardProps = {
   title: string;
@@ -114,16 +118,18 @@ function EmptyState({
 
 function QuoteStatusRow({
   status,
+  count,
   onPress,
 }: {
   status: QuoteStatus;
+  count: number | null;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Consulter les devis : ${status.label}`}
+      accessibilityLabel={`Consulter les devis : ${status.label}${count !== null ? `, ${count}` : ""}`}
       style={({ pressed }) => [
         styles.statusRow,
         pressed && styles.rowPressed,
@@ -141,17 +147,29 @@ function QuoteStatusRow({
       </View>
 
       <View style={styles.statusRight}>
-        <Text style={styles.pendingValue}>—</Text>
+        <Text style={[styles.pendingValue, count !== null && styles.countValue]}>
+          {count ?? "—"}
+        </Text>
         <Text style={styles.chevron}>›</Text>
       </View>
     </Pressable>
   );
 }
 
+const heure = (iso: string) =>
+  new Date(iso).toLocaleString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 export function DashboardView() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { user, isLoading } = useAuth();
+  const vm = useCommercialDashboardViewModel();
 
   if (isLoading) {
     return (
@@ -180,36 +198,81 @@ export function DashboardView() {
     (width - horizontalPadding - gridGap * (columns - 1)) /
     columns;
 
-  const quoteStatuses: QuoteStatus[] = [
-    { label: "Brouillons", color: "#64748B" },
-    { label: "Envoyés", color: "#2563EB" },
-    { label: "Signés", color: "#16A34A" },
-    { label: "Refusés", color: "#DC2626" },
+  const d = vm.donnees;
+  const n = (v: number | undefined) => (v === undefined ? "—" : String(v));
+  const peutConvertir = permissions.canConvertRequest(user.role);
+
+  const quoteStatuses: (QuoteStatus & { count: number | null })[] = [
+    { label: "Brouillons", color: "#64748B", count: d?.devis.brouillons ?? null },
+    { label: "En attente du client", color: "#2563EB", count: d?.devis.enAttenteClient ?? null },
+    { label: "Acceptés (à signer)", color: "#7C3AED", count: d?.devis.acceptes ?? null },
+    { label: "Signés papier à vérifier", color: "#D97706", count: d?.devis.signesPapierAVerifier ?? null },
   ];
 
   const openRequests = () => router.push("/prospects");
   const openQuotes = () => router.push("/devis");
+  const openQuote = (id: number) =>
+    router.push({ pathname: "/devis/[id]", params: { id: String(id) } });
 
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={vm.refreshing} onRefresh={vm.refresh} />
+      }
     >
       {/* En-tête */}
       <View style={styles.welcomeCard}>
         <Text style={styles.welcomeEyebrow}>
-          ESPACE COMMERCIAL
+          {d?.perimetre === "MOI" ? "MON ESPACE COMMERCIAL" : "ESPACE COMMERCIAL"}
         </Text>
 
         <Text style={styles.welcomeTitle}>
-          Bonjour ! 👋
+          Bonjour {user.prenom} ! 👋
         </Text>
 
         <Text style={styles.welcomeDescription}>
           Suivez vos demandes, vos devis et vos visites
           programmées depuis votre tableau de bord.
         </Text>
+      </View>
+
+      {vm.loading && !d ? (
+        <ActivityIndicator size="large" color={colors.brand[700]} />
+      ) : null}
+
+      {vm.erreur ? (
+        <View style={styles.errorCard}>
+          <Text style={styles.errorText}>{vm.erreur}</Text>
+          <Pressable onPress={() => void vm.retry()} accessibilityRole="button" hitSlop={8}>
+            <Text style={styles.actionText}>Réessayer</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* CHIFFRE D'AFFAIRES DU MOIS */}
+      <View style={styles.section}>
+        <SectionTitle title="Ce mois-ci" />
+        <View style={styles.metricsGrid}>
+          <View style={{ width: cardWidth }}>
+            <MetricCard
+              title="CA signé HT"
+              value={d ? formatEuros(d.chiffreAffaires.signeMoisHT) : "—"}
+              description={d ? `${d.chiffreAffaires.devisSignesMois} devis signé(s)` : "Devis signés du mois"}
+              color="#16A34A"
+            />
+          </View>
+          <View style={{ width: cardWidth }}>
+            <MetricCard
+              title="Conversion"
+              value={d?.conversion.taux !== null && d?.conversion.taux !== undefined ? `${String(d.conversion.taux).replace(".", ",")} %` : "—"}
+              description={d ? `${d.conversion.gagnes} gagné(s) sur ${d.conversion.envoyes} envoyé(s) en ${d.periodeJours} j` : "Devis gagnés / envoyés"}
+              color={colors.brand[700]}
+            />
+          </View>
+        </View>
       </View>
 
       {/* SECTION 1 : DEMANDES */}
@@ -224,8 +287,8 @@ export function DashboardView() {
           <View style={{ width: cardWidth }}>
             <MetricCard
               title="À traiter"
-              value="—"
-              description="Demandes en attente"
+              value={n(d?.prospects.total)}
+              description={d ? `${d.prospects.nouveaux} nouvelle(s) · ${d.prospects.enCours} en cours · ${d.prospects.qualifies} qualifiée(s)` : "Demandes en attente"}
               color="#F59E0B"
               onPress={openRequests}
             />
@@ -245,10 +308,48 @@ export function DashboardView() {
             </View>
           </View>
 
-          <EmptyState
-            title="Aucune demande chargée"
-            description="Les demandes à traiter apparaîtront ici lorsque les données du backend seront disponibles."
-          />
+          {d && !d.prospects.derniers.length ? (
+            <EmptyState
+              title="Aucune demande à traiter"
+              description="Les nouvelles demandes de vos clients apparaîtront ici."
+            />
+          ) : null}
+
+          {d?.prospects.derniers.map((dm) => {
+            const statut = DEMANDE_STATUT[dm.statut];
+            return (
+              <View key={dm.id} style={styles.itemRow}>
+                <Pressable
+                  onPress={() => router.push({ pathname: "/prospects/[id]", params: { id: String(dm.id) } })}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.itemMain, pressed && styles.rowPressed]}
+                >
+                  <Text style={styles.itemTitle}>{fullName(dm.client) || "Client"}</Text>
+                  <Text style={styles.itemMeta}>
+                    {dm.reference} · {formatDate(dm.createdAt)}
+                  </Text>
+                  {statut ? (
+                    <Text style={[styles.itemBadge, { color: statut.couleur, backgroundColor: statut.fond }]}>
+                      {statut.label}
+                    </Text>
+                  ) : null}
+                </Pressable>
+                {peutConvertir ? (
+                  <Pressable
+                    onPress={() => void vm.creerDevis(dm.id)}
+                    disabled={vm.conversion !== null}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Créer le devis de la demande ${dm.reference}`}
+                    style={({ pressed }) => [styles.smallButton, (pressed || vm.conversion !== null) && styles.pressed]}
+                  >
+                    <Text style={styles.smallButtonText}>
+                      {vm.conversion === dm.id ? "Création…" : "Créer le devis"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            );
+          })}
 
           <Pressable
             onPress={openRequests}
@@ -273,42 +374,41 @@ export function DashboardView() {
           onPress={openQuotes}
         />
 
-        <View style={styles.metricsGrid}>
-          <View style={{ width: cardWidth }}>
-            <MetricCard
-              title="Tous les devis"
-              value="—"
-              description="Tous les statuts"
-              color={colors.brand[700]}
-              onPress={openQuotes}
-            />
-          </View>
-
-          <View style={{ width: cardWidth }}>
-            <MetricCard
-              title="Devis signés"
-              value="—"
-              description="Devis acceptés"
-              color="#16A34A"
-              onPress={openQuotes}
-            />
-          </View>
-        </View>
-
         <View style={styles.sectionCard}>
           {quoteStatuses.map((status) => (
             <QuoteStatusRow
               key={status.label}
               status={status}
+              count={status.count}
               onPress={openQuotes}
             />
           ))}
-
-          <Text style={styles.helperText}>
-            Les compteurs seront renseignés après la connexion
-            aux API du backend.
-          </Text>
         </View>
+
+        {d?.aRelancer.items.length ? (
+          <View style={styles.sectionCard}>
+            <View style={styles.cardHeadingRow}>
+              <Text style={styles.cardHeading}>À relancer ({d.aRelancer.total})</Text>
+              <Text style={styles.itemMeta}>sans réponse depuis {d.aRelancer.joursSansReponse} j</Text>
+            </View>
+            {d.aRelancer.items.map((dv) => (
+              <Pressable
+                key={dv.id}
+                onPress={() => openQuote(dv.id)}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.statusRow, pressed && styles.rowPressed]}
+              >
+                <View style={styles.itemMain}>
+                  <Text style={styles.itemTitle}>{fullName(dv.client) || "Client"}</Text>
+                  <Text style={styles.itemMeta}>
+                    {dv.reference} · envoyé le {formatDate(dv.dateEnvoi ?? dv.remisLe)}
+                  </Text>
+                </View>
+                <Text style={styles.itemAmount}>{formatEuros(dv.totalTTC)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
 
       {/* SECTION 3 : VISITES */}
@@ -319,7 +419,7 @@ export function DashboardView() {
           <View style={{ width: cardWidth }}>
             <MetricCard
               title="À venir"
-              value="—"
+              value={n(d?.visites.aVenir)}
               description="Visites programmées"
               color="#8B5CF6"
             />
@@ -331,10 +431,24 @@ export function DashboardView() {
             Prochaines visites
           </Text>
 
-          <EmptyState
-            title="Aucune visite chargée"
-            description="Le planning apparaîtra ici après l'intégration des données de visites."
-          />
+          {d && !d.visites.prochaines.length ? (
+            <EmptyState
+              title="Aucune visite programmée"
+              description="Les visites prévues chez vos clients apparaîtront ici."
+            />
+          ) : null}
+
+          {d?.visites.prochaines.map((v) => (
+            <View key={v.id} style={styles.visitRow}>
+              <Text style={styles.visitDate}>{heure(v.dateHeure)}</Text>
+              <Text style={styles.itemTitle}>{fullName(v.client) || "Client"}</Text>
+              {v.objet ? <Text style={styles.itemMeta}>{v.objet}</Text> : null}
+              {v.adresse ? <Text style={styles.itemMeta}>{v.adresse}</Text> : null}
+              {d.perimetre === "ENTREPRISE" && v.commercial ? (
+                <Text style={styles.itemMeta}>Avec {fullName(v.commercial)}</Text>
+              ) : null}
+            </View>
+          ))}
         </View>
       </View>
 
@@ -586,6 +700,94 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+
+  countValue: {
+    color: colors.text.DEFAULT,
+  },
+
+  errorCard: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+
+  errorText: {
+    color: colors.status.error,
+    fontSize: 13,
+  },
+
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E2E8F0",
+  },
+
+  itemMain: {
+    flex: 1,
+    gap: 3,
+  },
+
+  itemTitle: {
+    color: colors.text.DEFAULT,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  itemMeta: {
+    color: colors.text.muted,
+    fontSize: 12,
+  },
+
+  itemBadge: {
+    alignSelf: "flex-start",
+    fontSize: 11,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginTop: 2,
+  },
+
+  itemAmount: {
+    color: colors.text.DEFAULT,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  smallButton: {
+    borderWidth: 1,
+    borderColor: colors.brand[700],
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+  },
+
+  smallButtonText: {
+    color: colors.brand[700],
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  visitRow: {
+    gap: 3,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E2E8F0",
+  },
+
+  visitDate: {
+    color: "#7C3AED",
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "capitalize",
   },
 
   footer: {

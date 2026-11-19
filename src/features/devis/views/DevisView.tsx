@@ -74,11 +74,16 @@ function DevisListe({ peutCreer }: { peutCreer: boolean }) {
             );
           })}
         </ScrollView>
-        {peutCreer ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push("/devis/create")} style={styles.nouveau}>
-            <Text style={styles.nouveauTexte}>＋ Nouveau devis</Text>
+        <View style={styles.boutons}>
+          {peutCreer ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push("/devis/create")} style={[styles.nouveau, styles.flex]}>
+              <Text style={styles.nouveauTexte}>＋ Nouveau devis</Text>
+            </Pressable>
+          ) : null}
+          <Pressable accessibilityRole="button" onPress={() => router.push("/catalogue")} style={[styles.catalogue, !peutCreer && styles.flex]}>
+            <Text style={styles.catalogueTexte}>Catalogue</Text>
           </Pressable>
-        ) : null}
+        </View>
       </View>
 
       {vm.loading ? (
@@ -117,6 +122,10 @@ const styles = StyleSheet.create({
   chipTexteActif: { color: colors.white },
   nouveau: { minHeight: 44, borderRadius: 12, backgroundColor: colors.brand[700], alignItems: "center", justifyContent: "center" },
   nouveauTexte: { color: colors.white, fontWeight: "700", fontSize: 15 },
+  boutons: { flexDirection: "row", gap: spacing.sm },
+  flex: { flex: 1 },
+  catalogue: { minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.brand[500], backgroundColor: colors.surface.DEFAULT, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg },
+  catalogueTexte: { color: colors.brand[700], fontWeight: "700", fontSize: 15 },
   liste: { padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing["3xl"] },
   card: { backgroundColor: colors.surface.DEFAULT, borderRadius: 14, borderWidth: 1, borderColor: colors.border.DEFAULT, padding: spacing.md, gap: 4 },
   pressed: { opacity: 0.8 },

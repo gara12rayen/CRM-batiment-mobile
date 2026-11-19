@@ -8,7 +8,27 @@
     "userInterfaceStyle": "automatic",
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CRM Bâtiment utilise vos photos pour préparer les devis.",
+          "cameraPermission": "CRM Bâtiment utilise l’appareil photo pour photographier le chantier."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "CRM Bâtiment utilise le micro pour dicter la description des travaux."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CRM Bâtiment ajoute le lieu de signature au devis signé sur place."
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

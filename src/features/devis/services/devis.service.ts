@@ -1,5 +1,6 @@
 import { apiClient, apiRequest } from "@/core/api/api-client";
 import { apiEndpoints } from "@/core/api/api-endpoints";
+import { enteteIdempotence } from "@/core/api/idempotency";
 import type { PaginatedResponse } from "@/features/clients/services/clients.service";
 import type { DevisDetail, DevisListItem, DevisStatut } from "../models/Devis";
 
@@ -41,4 +42,35 @@ export async function modifierLigne(id: number, ligneId: number, body: { quantit
 
 export async function supprimerLigne(id: number, ligneId: number): Promise<DevisDetail> {
   return (await apiClient.delete<DevisDetail>(`${apiEndpoints.devis}/${id}/lignes/${ligneId}`)).data;
+}
+
+// ── Actions (bureau seulement : ADMIN, TECHNICO, ASSISTANTE) ─────────────────────────────
+
+export type EnvoiDevisResultat = { devis: DevisDetail; emailSent: boolean };
+export type LienWhatsappResultat = { numero: string; message: string; lienWhatsapp: string };
+
+/** Sends the quote by email to the client (PDF attached + link to answer). BROUILLON / REVISE only. */
+export async function envoyerDevis(id: number): Promise<EnvoiDevisResultat> {
+  const { data } = await apiClient.post<EnvoiDevisResultat>(`${apiEndpoints.devis}/${id}/envoyer`, undefined, {
+    headers: enteteIdempotence(),
+  });
+  return { devis: data.devis, emailSent: data.emailSent };
+}
+
+/** Handed to the client in person: the quote becomes « Envoyé » without any email. */
+export async function remettreDevis(id: number): Promise<DevisDetail> {
+  return (await apiClient.post<DevisDetail>(`${apiEndpoints.devis}/${id}/remettre`, undefined, { headers: enteteIdempotence() })).data;
+}
+
+/** wa.me link with a ready message and the answer link (nothing is sent by the server). ENVOYE / RENVOYE only. */
+export async function lienWhatsappDevis(id: number): Promise<LienWhatsappResultat> {
+  const { data } = await apiClient.post<LienWhatsappResultat>(`${apiEndpoints.devis}/${id}/lien-whatsapp`, undefined, {
+    headers: enteteIdempotence(),
+  });
+  return { numero: data.numero, message: data.message, lienWhatsapp: data.lienWhatsapp };
+}
+
+/** The client said no (reason required). ENVOYE / RENVOYE only. */
+export async function refuserDevis(id: number, motif: string): Promise<DevisDetail> {
+  return (await apiClient.post<DevisDetail>(`${apiEndpoints.devis}/${id}/refuser`, { motif: motif.trim() }, { headers: enteteIdempotence() })).data;
 }

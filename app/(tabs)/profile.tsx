@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { permissions } from "@/features/auth/utils/permissions";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
@@ -97,6 +98,17 @@ export default function ProfileRoute() {
         </View>
       </View>
 
+      {permissions.canManageOwnSignature(user.role) ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.signatureButton}
+          onPress={() => router.push("/profil/signature")}
+        >
+          <Text style={styles.signatureText}>Ma signature</Text>
+          <Text style={styles.signatureHint}>Utilisée pour la signature des devis sur place</Text>
+        </Pressable>
+      ) : null}
+
       <Pressable style={styles.logoutButton} onPress={handleSignOut}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </Pressable>
@@ -105,6 +117,24 @@ export default function ProfileRoute() {
 }
 
 const styles = StyleSheet.create({
+  signatureButton: {
+    backgroundColor: colors.surface.DEFAULT,
+    borderColor: colors.border.DEFAULT,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    gap: spacing.xs,
+  },
+  signatureText: {
+    color: colors.brand[700],
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  signatureHint: {
+    color: colors.text.muted,
+    fontSize: 12,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background.DEFAULT,
