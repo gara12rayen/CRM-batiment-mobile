@@ -35,6 +35,10 @@ export default function RootLayout() {
           name="offline-sync-test"
           options={{ title: "Envoi Différé (Socle 1B)" }}
         />
+        <Stack.Screen
+          name="document-scan-test"
+          options={{ title: "Scan Multi-Pages (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>
