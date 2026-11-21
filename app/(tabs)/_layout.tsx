@@ -76,12 +76,28 @@ export default function TabsLayout() {
                 style={{
                   paddingHorizontal: 8,
                   paddingVertical: 5,
+                  backgroundColor: colors.surface,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 11 }}>
+                  📄 Scan
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/photo-capture-test" as Href)}
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 5,
                   backgroundColor: colors.primary,
                   borderRadius: 6,
                 }}
               >
                 <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 11 }}>
-                  📄 Scan
+                  📷 Photo
                 </Text>
               </Pressable>
             </View>

@@ -39,6 +39,10 @@ export default function RootLayout() {
           name="document-scan-test"
           options={{ title: "Scan Multi-Pages (Socle 1B)" }}
         />
+        <Stack.Screen
+          name="photo-capture-test"
+          options={{ title: "Outils Photo (Socle 1B)" }}
+        />
         <Stack.Screen name="+not-found" options={{ title: "Page introuvable" }} />
       </Stack>
     </>
