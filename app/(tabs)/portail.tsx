@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { apiClient } from "@/core/api/api-client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
+import { ChantiersSousTraitantListe } from "@/features/chantier-fiche/views/ChantiersSousTraitantListe";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
 type SupplierDashboard = {
@@ -114,6 +115,7 @@ export default function PortalRoute() {
           <Text>{value}</Text>
         </View>
       ))}
+      {isSubcontractor ? <ChantiersSousTraitantListe /> : null}
     </PlaceholderView>
   );
 }

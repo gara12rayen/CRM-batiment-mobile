@@ -13,3 +13,15 @@ Le client signale une URL absente ou une réponse HTTP non réussie au code appe
 - Rappel de la demande : `GET /demandes-devis/:id`, fichiers `GET /fichiers/:id/contenu` (avec le jeton)
 - Accueil commercial : `GET /dashboard/commercial`, `POST /demandes-devis/:id/convertir-en-devis`
 - Lecture de plan (OCR) : simulée dans `src/features/devis-ia/services/planOcr.service.ts` (aucune route API pour l’instant)
+
+## Partie 2 (fin) et partie 3 — 24/11/2026
+
+- Demandes de devis : `GET /demandes-devis` (statuts, source=TERRAIN, search), `GET /demandes-devis/:id`, `POST …/prendre-en-charge|qualifier|perdre|reouvrir`, `POST …/convertir-en-devis`
+- Brouillon du chef : `POST /devis/brouillon-chef`
+- Fiche chantier : `GET/PATCH /chantiers/:id`, `POST /chantiers/:id/demarrer|suspendre|reprendre|terminer` ; sous-traitant : `GET /portail/sous-traitant/chantiers(/:id)`
+- Photos et rapports : `GET/POST /chantiers/:id/photos`, `DELETE …/photos/:id`, `GET/POST /chantiers/:id/rapports`, `DELETE …/rapports/:id`
+- Prospect terrain : `GET/POST /prospects-terrain`, `POST /prospects-terrain/:id/fichiers`
+- SAV : `GET /sav`, `GET /sav/chantiers`, `POST /sav`, `POST /sav/:id/photos`
+- Livraisons : `GET /commandes-fournisseur(/:id)`, `POST /ocr/bon-livraison`, `POST /commandes-fournisseur/:id/receptions`, `POST /receptions/:id/fichiers`
+- Facture fournisseur : `POST /ocr/facture-fournisseur`, `POST /depenses`
+- Envoi différé : `src/core/offline/fileEnvoi.ts` (file gardée sur le téléphone, clé Idempotency-Key par envoi)

@@ -4,10 +4,24 @@ import { env } from "@/core/config/env";
 import { getAccessToken } from "@/features/auth/services/authStorage";
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    /** Business code of the API (e.g. CLIENT_EXISTANT), when it sends one */
+    public readonly code?: string,
+    /** Extra data of the error (e.g. the possible duplicates) */
+    public readonly details?: unknown,
+  ) {
     super(message);
     this.name = "ApiError";
   }
+}
+
+/** Code and details of an API error ({ message, code, details }). */
+function codeApi(data: unknown): { code?: string; details?: unknown } {
+  if (!data || typeof data !== "object") return {};
+  const { code, details } = data as { code?: unknown; details?: unknown };
+  return { code: typeof code === "string" ? code : undefined, details };
 }
 
 export const apiClient = axios.create({
@@ -49,6 +63,8 @@ apiClient.interceptors.response.use(
             messageApi(error.response.data) ??
               `La requête API a échoué (${error.response.status}).`,
             error.response.status,
+            codeApi(error.response.data).code,
+            codeApi(error.response.data).details,
           ),
         );
       }

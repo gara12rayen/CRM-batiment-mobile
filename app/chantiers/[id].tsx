@@ -1,7 +1,8 @@
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { permissions } from "@/features/auth/utils/permissions";
+import { ChantierFicheView } from "@/features/chantier-fiche/views/ChantierFicheView";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
 export default function ChantierDetailsRoute() {
@@ -16,18 +17,14 @@ export default function ChantierDetailsRoute() {
     );
   }
 
-  if (
-    !user ||
-    !permissions.canAccessExecution(user.role) ||
-    !permissions.canReadChantiers(user.role)
-  ) {
-    return (
-      <PlaceholderView
-        title="Accès non autorisé"
-        description="Les chantiers sont accessibles selon les droits du mode exécution de votre entreprise."
-      />
-    );
+  if (!user || !permissions.canReadChantierFiche(user.role)) {
+    return <PlaceholderView title="Accès refusé" description="Les chantiers sont réservés à l’équipe et aux sous-traitants concernés." />;
   }
 
-  return <PlaceholderView title="Détail du chantier" description={`Chantier : ${id}`} />;
+  return (
+    <>
+      <Stack.Screen options={{ title: "Chantier" }} />
+      <ChantierFicheView id={Number(id)} />
+    </>
+  );
 }

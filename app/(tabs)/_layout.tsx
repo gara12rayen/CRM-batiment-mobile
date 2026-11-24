@@ -1,6 +1,7 @@
 import { ActivityIndicator, View } from "react-native";
 import { Redirect, Tabs } from "expo-router";
 
+import { FileEnvoiDemarreur } from "@/core/offline/FileEnvoiDemarreur";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ongletVisible, type OngletNom } from "@/features/auth/utils/navigation";
 
@@ -26,10 +27,13 @@ export default function TabsLayout() {
   const href = (onglet: OngletNom) => (ongletVisible(user.role, onglet) ? undefined : null);
 
   return (
+    <>
+    {/* Field items kept without network are sent again here (signed-in users only) */}
+    <FileEnvoiDemarreur />
     <Tabs screenOptions={{ headerShown: true }}>
       <Tabs.Screen name="index" options={{ title: "Accueil", href: href("index") }} />
       <Tabs.Screen name="clients" options={{ title: "Clients", href: href("clients") }} />
-      <Tabs.Screen name="prospects" options={{ title: "Prospects", href: href("prospects") }} />
+      <Tabs.Screen name="prospects" options={{ title: "Demandes", href: href("prospects") }} />
       <Tabs.Screen name="devis" options={{ title: "Devis", href: href("devis") }} />
       <Tabs.Screen name="chantiers" options={{ title: "Chantiers", href: href("chantiers") }} />
       <Tabs.Screen name="planning" options={{ title: "Planning", href: href("planning") }} />
@@ -39,5 +43,6 @@ export default function TabsLayout() {
       {/* Ancien onglet « Exécution » : son contenu (tableau de bord du chef) est maintenant l'Accueil du chef */}
       <Tabs.Screen name="execution" options={{ title: "Exécution", href: null }} />
     </Tabs>
+    </>
   );
 }

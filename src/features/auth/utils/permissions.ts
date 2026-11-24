@@ -65,6 +65,10 @@ export const permissions = {
   canManageOwnSignature: (role: UserRole) =>
     ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
 
+  // Demandes de devis : liste, détail, prise en charge, qualification, rejet (API : bureau)
+  canReadRequests: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE"].includes(role),
+
   // Transformer une demande en devis brouillon (API : ADMIN et TECHNICO seulement)
   canConvertRequest: (role: UserRole) =>
     ["ADMIN", "TECHNICO"].includes(role),
@@ -134,4 +138,32 @@ export const permissions = {
 
   canAccessSubcontractorPortal: (role: UserRole) =>
     role === "SOUS_TRAITANT",
+
+  // ── Partie 3 (terrain) — mêmes rôles que l'API ──
+
+  // Fiche chantier : bureau + chef (ses chantiers) ; sous-traitant en lecture par son portail, sans prix
+  canReadChantierFiche: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER", "SOUS_TRAITANT"].includes(role),
+
+  // Statut, dates et notes du chantier (API : admin, assistante, chef)
+  canEditChantier: (role: UserRole) =>
+    ["ADMIN", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+
+  // Photos avant / après et rapports de chantier : voir (bureau + chef), envoyer (admin, assistante, chef)
+  canReadPhotosChantier: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+  canSendPhotosChantier: (role: UserRole) =>
+    ["ADMIN", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+
+  // Prospect terrain et ticket SAV : toute l'équipe interne
+  canSendProspectTerrain: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+  canCreateSav: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
+
+  // Réception d'une livraison (bon de livraison) et facture fournisseur photographiée
+  canReceiveDelivery: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER", "SOUS_TRAITANT"].includes(role),
+  canSendSupplierInvoice: (role: UserRole) =>
+    ["ADMIN", "TECHNICO", "ASSISTANTE", "CHEF_CHANTIER"].includes(role),
 };

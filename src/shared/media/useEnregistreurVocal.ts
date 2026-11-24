@@ -12,9 +12,14 @@ export const DUREE_MAX_SECONDES = 180;
 export function useEnregistreurVocal() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [enCours, setEnCours] = useState(false);
+  const [enPause, setEnPause] = useState(false);
   const [secondes, setSecondes] = useState(0);
   const [erreur, setErreur] = useState<string | null>(null);
   const minuteur = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const lancerMinuteur = () => {
+    minuteur.current = setInterval(() => setSecondes((s) => s + 1), 1000);
+  };
 
   const arreterMinuteur = () => {
     if (minuteur.current) clearInterval(minuteur.current);
@@ -35,13 +40,30 @@ export function useEnregistreurVocal() {
     recorder.record();
     setSecondes(0);
     setEnCours(true);
-    minuteur.current = setInterval(() => setSecondes((s) => s + 1), 1000);
+    setEnPause(false);
+    lancerMinuteur();
     return true;
+  }
+
+  /** Pause without losing what was said; reprendre() goes on in the same file. */
+  function pause() {
+    if (!enCours || enPause) return;
+    recorder.pause();
+    arreterMinuteur();
+    setEnPause(true);
+  }
+
+  function reprendre() {
+    if (!enCours || !enPause) return;
+    recorder.record();
+    lancerMinuteur();
+    setEnPause(false);
   }
 
   async function arreter(): Promise<FichierLocal | null> {
     arreterMinuteur();
     setEnCours(false);
+    setEnPause(false);
     await recorder.stop();
     await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
     const uri = recorder.uri;
@@ -52,5 +74,5 @@ export function useEnregistreurVocal() {
     return { uri, nom: `note-${Date.now()}.m4a`, type: "audio/mp4" };
   }
 
-  return { enCours, secondes, erreur, demarrer, arreter };
+  return { enCours, enPause, secondes, restantes: Math.max(0, DUREE_MAX_SECONDES - secondes), erreur, demarrer, pause, reprendre, arreter };
 }

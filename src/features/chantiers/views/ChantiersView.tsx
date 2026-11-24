@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -7,12 +8,19 @@ import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { Input } from "@/shared/components/Input";
 import { formatDate, fullName } from "@/shared/utils/format";
 import { CHANTIER_STATUT } from "../models/Chantier";
+import { equipes, filtrerChantiers, PERIODES, type Periode } from "../models/filtresChantiers";
 import { FILTRES_CHANTIERS, useChantiersViewModel } from "../viewmodels/useChantiersViewModel";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
-/** Liste des chantiers (sans aucun prix) : toucher un chantier ouvre ses tâches. */
+/** Liste des chantiers (sans aucun prix) : filtres statut, période et équipe ; toucher un chantier ouvre sa fiche. */
 export function ChantiersView() {
   const router = useRouter();
   const vm = useChantiersViewModel();
+  const { user } = useAuth();
+  const [periode, setPeriode] = useState<Periode>("toutes");
+  const [chefId, setChefId] = useState<number | null>(null);
+  const listeEquipes = useMemo(() => equipes(vm.chantiers), [vm.chantiers]);
+  const visibles = useMemo(() => filtrerChantiers(vm.chantiers, periode, chefId), [vm.chantiers, periode, chefId]);
 
   return (
     <View style={styles.container}>
@@ -28,6 +36,28 @@ export function ChantiersView() {
             );
           })}
         </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtres}>
+          {PERIODES.map((p) => {
+            const actif = periode === p.value;
+            return (
+              <Pressable key={p.value} accessibilityRole="button" accessibilityState={{ selected: actif }} onPress={() => setPeriode(p.value)} style={[styles.chip, actif && styles.chipActif]}>
+                <Text style={[styles.chipTexte, actif && styles.chipTexteActif]}>{p.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        {user?.role !== "CHEF_CHANTIER" && listeEquipes.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtres}>
+            {[{ id: null as number | null, nom: "Toutes les équipes" }, ...listeEquipes].map((e) => {
+              const actif = chefId === e.id;
+              return (
+                <Pressable key={String(e.id)} accessibilityRole="button" accessibilityState={{ selected: actif }} onPress={() => setChefId(e.id)} style={[styles.chip, actif && styles.chipActif]}>
+                  <Text style={[styles.chipTexte, actif && styles.chipTexteActif]}>{e.nom}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
       </View>
 
       {vm.loading ? (
@@ -41,7 +71,7 @@ export function ChantiersView() {
         </View>
       ) : (
         <FlatList
-          data={vm.chantiers}
+          data={visibles}
           keyExtractor={(c) => String(c.id)}
           contentContainerStyle={styles.liste}
           refreshControl={<RefreshControl refreshing={vm.refreshing} onRefresh={vm.refresh} />}
@@ -54,7 +84,7 @@ export function ChantiersView() {
             return (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.push({ pathname: "/chantiers/taches", params: { chantierId: String(c.id) } })}
+                onPress={() => router.push({ pathname: "/chantiers/[id]", params: { id: String(c.id) } })}
                 style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
                 <View style={styles.rowBetween}>

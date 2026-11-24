@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ActionsRapidesChef } from "../components/ActionsRapidesChef";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -68,6 +69,8 @@ export function ChefDashboardView() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={vm.refreshing} onRefresh={vm.refresh} />}>
       <Text style={styles.date}>{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</Text>
+
+      <ActionsRapidesChef />
 
       {/* Chiffres clés : un coup d'œil, puis le détail en dessous */}
       <View style={styles.tuiles}>

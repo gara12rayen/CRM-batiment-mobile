@@ -1,3 +1,3 @@
-import { ProspectsView } from "@/features/prospects/views/ProspectsView";
+import { DemandesRoute } from "@/features/demandes/views/DemandesRoute";
 
-export default ProspectsView;
+export default DemandesRoute;
