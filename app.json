@@ -28,7 +28,8 @@
           "locationWhenInUsePermission": "CRM Bâtiment ajoute le lieu de signature au devis signé sur place."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true
