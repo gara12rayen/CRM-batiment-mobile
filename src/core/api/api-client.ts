@@ -1,6 +1,8 @@
-
+import axios from "axios";
 import { env } from "@/core/config/env";
 import { secureStorage } from "@/core/storage/secure-storage";
+import { clearSession } from "@/features/auth/services/authStorage";
+import { notifySessionExpired } from "@/features/auth/services/sessionEvents";
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -9,40 +11,55 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(
-  endpoint: string,
-  init?: RequestInit,
-): Promise<T> {
-  if (!env.apiUrl) {
-    throw new Error("EXPO_PUBLIC_API_URL n'est pas configurée.");
-  }
+export const apiClient = axios.create({
+  baseURL: env.apiUrl,
+  timeout: 15000,
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+});
 
-  // Préparer les en-têtes de la requête.
-  const headers = new Headers(init?.headers);
-  headers.set("Accept", "application/json");
-
-  // Ajouter le token de la session si l'utilisateur est connecté.
+apiClient.interceptors.request.use(async (config) => {
   const token = await secureStorage.getItem("accessToken");
 
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
+  if (token) {
+    config.headers.Authorization = ["Bearer", token].join(" ");
   }
 
-  const response = await fetch(new URL(endpoint, env.apiUrl), {
-    ...init,
-    headers,
-  });
+  return config;
+});
 
-  if (!response.ok) {
-    throw new ApiError(
-      `La requête API a échoué (${response.status}).`,
-      response.status,
-    );
-  }
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        if (error.response.status === 401) {
+          void clearSession();
+          notifySessionExpired();
+        }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
+        const responseMessage = error.response.data?.message;
+        const message = Array.isArray(responseMessage)
+          ? responseMessage.join(" ")
+          : typeof responseMessage === "string"
+            ? responseMessage
+            : `La requête API a échoué (${error.response.status}).`;
 
-  return (await response.json()) as T;
-}
+        return Promise.reject(new ApiError(message, error.response.status));
+      }
+
+      if (error.request) {
+        return Promise.reject(
+          new ApiError(
+            "Impossible de contacter le serveur. Vérifiez votre connexion.",
+            0,
+          ),
+        );
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);

@@ -1,0 +1,98 @@
+export type LoginCredentials = {
+  email: string;
+  password: string;
+};
+
+export type SessionCompany = {
+  id: string | number;
+  nom: string;
+  type?: string | null;
+  chantierMode?: string | null;
+  modeChantier?: string | null;
+};
+
+export type SessionUser = {
+  id: string | number;
+  email: string;
+  nom: string;
+  prenom: string;
+  role: string;
+  companyId: string | number | null;
+  telephone?: string | null;
+  company?: SessionCompany | null;
+};
+
+export type Profile = SessionUser & {
+  signatureUpdatedAt?: string | null;
+};
+
+export type UpdateProfileInput = {
+  nom?: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
+  currentPassword?: string;
+};
+
+export type Signature = {
+  signatureBase64: string | null;
+  signatureUpdatedAt: string | null;
+};
+
+export type SessionResponse = {
+  accessToken: string;
+  user: SessionUser;
+};
+
+export type PasswordChangeRequiredResponse = {
+  mustChangePassword: true;
+  passwordChangeToken: string;
+  message: string;
+};
+
+export type LoginResponse =
+  | SessionResponse
+  | PasswordChangeRequiredResponse;
+
+export type ChangePasswordCredentials = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ChangePasswordResponse = SessionResponse & {
+  message: string;
+};
+
+export function isPasswordChangeRequired(
+  response: LoginResponse,
+): response is PasswordChangeRequiredResponse {
+  return "mustChangePassword" in response;
+}
+
+export const PASSWORD_POLICY = {
+  minLength: 10,
+  maxLength: 72,
+  description:
+    "Au moins 10 caractères, dont une majuscule, une minuscule et un chiffre.",
+} as const;
+
+export type ForgotPasswordCredentials = {
+  email: string;
+};
+
+export type VerifyResetCodeCredentials = {
+  email: string;
+  code: string;
+};
+
+export type ResetPasswordCredentials = VerifyResetCodeCredentials & {
+  newPassword: string;
+};
+
+export type ForgotPasswordResponse = {
+  message: string;
+};
+
+export type VerifyResetCodeResponse = {
+  message: string;
+};

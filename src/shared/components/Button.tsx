@@ -30,7 +30,7 @@ export function Button({ label, onPress, disabled, children }: ButtonProps) {
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: colors.brand[700],
     borderRadius: 8,
     padding: spacing.md,
   },

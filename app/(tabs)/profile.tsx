@@ -1,10 +1,10 @@
-import { PlaceholderView } from "@/shared/components/PlaceholderView";
+import { AccessGate } from "@/features/access/AccessGate";
+import { ProfileView } from "@/features/auth/views/ProfileView";
 
 export default function ProfileRoute() {
   return (
-    <PlaceholderView
-      title="Profil"
-      description="L'espace profil sera intégré dans une prochaine étape."
-    />
+    <AccessGate permission="profile">
+      <ProfileView />
+    </AccessGate>
   );
 }

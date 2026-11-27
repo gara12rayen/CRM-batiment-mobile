@@ -1,5 +1,10 @@
+import { AccessGate } from "@/features/access/AccessGate";
 import { PlaceholderView } from "@/shared/components/PlaceholderView";
 
 export default function CreateDevisRoute() {
-  return <PlaceholderView title="Nouveau devis" description="Formulaire à venir." />;
+  return (
+    <AccessGate permission="devis.write">
+      <PlaceholderView title="Nouveau devis" description="Formulaire à venir." />
+    </AccessGate>
+  );
 }

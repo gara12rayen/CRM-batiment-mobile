@@ -1,7 +1,31 @@
+
+import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 export const secureStorage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  deleteItem: (key: string) => SecureStore.deleteItemAsync(key),
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key);
+    }
+
+    return SecureStore.getItemAsync(key);
+  },
+
+  async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value);
+      return;
+    }
+
+    await SecureStore.setItemAsync(key, value);
+  },
+
+  async deleteItem(key: string): Promise<void> {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key);
+      return;
+    }
+
+    await SecureStore.deleteItemAsync(key);
+  },
 };
