@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -49,10 +48,9 @@ export default function LoginView({
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background.DEFAULT }}
-      contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 }}
-      keyboardShouldPersistTaps="handled"
+    <View
+      className="flex-1 justify-center px-6"
+      style={{ backgroundColor: colors.background.DEFAULT }}
     >
       <View className="w-full self-center" style={{ maxWidth: 420 }}>
         {/* Header */}
@@ -270,7 +268,7 @@ export default function LoginView({
 
           {/* Submit button */}
           <Pressable
-            onPress={() => void handleSubmit(submit)()}
+            onPress={handleSubmit(submit)}
             disabled={isLoading}
             accessibilityRole="button"
             accessibilityLabel="Se connecter"
@@ -305,6 +303,6 @@ export default function LoginView({
           BâtiFlow · Espace professionnel sécurisé
         </Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }

@@ -14,5 +14,5 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
 }
 
 const styles = StyleSheet.create({
-  message: { color: colors.status.error, paddingVertical: 8 },
+  message: { color: colors.danger, paddingVertical: 8 },
 });

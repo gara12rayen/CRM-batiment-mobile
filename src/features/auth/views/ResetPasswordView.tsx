@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -75,7 +74,7 @@ export default function ResetPasswordView({
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "white" }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 32 }} keyboardShouldPersistTaps="handled">
+    <View className="flex-1 justify-center bg-white px-6 py-8">
       <Text className="mb-2 text-2xl font-bold text-[#143B68]">
         Nouveau mot de passe
       </Text>
@@ -180,6 +179,6 @@ export default function ResetPasswordView({
           </Text>
         )}
       </Pressable>
-    </ScrollView>
+    </View>
   );
 }

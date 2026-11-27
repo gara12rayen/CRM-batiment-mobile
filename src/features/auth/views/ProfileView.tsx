@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,7 +28,6 @@ import {
 import { clearSession, updateStoredUser } from "@/features/auth/services/authStorage";
 import type { Profile } from "@/features/auth/models/auth.types";
 import { useAccess } from "@/features/access/AccessProvider";
-import { SvgXml } from "react-native-svg";
 
 export function ProfileView() {
   const router = useRouter();
@@ -46,33 +47,33 @@ export function ProfileView() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const loadedProfile = await getProfile();
-        setProfile(loadedProfile);
-        setNom(loadedProfile.nom);
-        setPrenom(loadedProfile.prenom);
-        setEmail(loadedProfile.email);
-        setTelephone(loadedProfile.telephone ?? "");
-        if (canEditSignature) {
-          try {
-            const loadedSignature = await getSignature();
-            setSignature(loadedSignature.signatureBase64);
-          } catch (error) {
-            if (!(error instanceof ApiError) || ![403, 404].includes(error.status)) {
-              throw error;
-            }
+    void loadProfile();
+  }, []);
+
+  async function loadProfile() {
+    try {
+      const loadedProfile = await getProfile();
+      setProfile(loadedProfile);
+      setNom(loadedProfile.nom);
+      setPrenom(loadedProfile.prenom);
+      setEmail(loadedProfile.email);
+      setTelephone(loadedProfile.telephone ?? "");
+      if (has("signature")) {
+        try {
+          const loadedSignature = await getSignature();
+          setSignature(loadedSignature.signatureBase64);
+        } catch (error) {
+          if (!(error instanceof ApiError) || ![403, 404].includes(error.status)) {
+            throw error;
           }
         }
-      } catch (error) {
-        setErrorMessage(getErrorMessage(error));
-      } finally {
-        setIsLoading(false);
       }
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-
-    void loadProfile();
-  }, [canEditSignature]);
+  }
 
   async function handleSaveProfile() {
     const trimmedNom = nom.trim();
@@ -143,6 +144,13 @@ export function ProfileView() {
   }
 
   function handleLogout() {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm("Voulez-vous vraiment vous déconnecter ?")) {
+        void completeLogout();
+      }
+      return;
+    }
+
     Alert.alert("Déconnexion", "Voulez-vous vraiment vous déconnecter ?", [
       { text: "Annuler", style: "cancel" },
       {
@@ -179,8 +187,11 @@ export function ProfileView() {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Mon profil</Text>
         {errorMessage && <ErrorMessage message={errorMessage} />}
 
@@ -232,11 +243,7 @@ export function ProfileView() {
         {canEditSignature ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Signature du conseiller</Text>
-          {signature && (signature.startsWith("data:image/svg+xml;base64,") ? (
-            <SvgXml xml={atob(signature.slice("data:image/svg+xml;base64,".length))} width="100%" height={120} accessibilityLabel="Signature enregistrée" />
-          ) : (
-            <Image accessibilityLabel="Signature enregistrée" source={{ uri: signature }} style={styles.signature} />
-          ))}
+          {signature && <Image accessibilityLabel="Signature enregistrée" source={{ uri: signature }} style={styles.signature} />}
           <SignaturePad onChange={setNewSignature} />
           <Button disabled={isSaving} label="Enregistrer la signature" onPress={() => void handleSaveSignature()} />
           {signature && <Button disabled={isSaving} label="Supprimer la signature" onPress={() => void handleDeleteSignature()} />}
@@ -247,7 +254,7 @@ export function ProfileView() {
           <Button label="Se déconnecter" onPress={handleLogout} />
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

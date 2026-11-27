@@ -6,7 +6,7 @@ export function Input(props: TextInputProps) {
   return (
     <TextInput
       {...props}
-      placeholderTextColor={colors.text.muted}
+      placeholderTextColor={colors.muted}
       style={[styles.input, props.style]}
     />
   );
@@ -14,10 +14,10 @@ export function Input(props: TextInputProps) {
 
 const styles = StyleSheet.create({
   input: {
-    borderColor: colors.border.DEFAULT,
+    borderColor: colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    color: colors.text.DEFAULT,
+    color: colors.text,
     padding: spacing.md,
   },
 });
