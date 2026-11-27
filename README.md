@@ -11,7 +11,7 @@ Application Android React Native avec Expo Router et TypeScript. Le projet suit 
 
 Pour un backend local sur l'émulateur Android, l'adresse de l'ordinateur est `10.0.2.2` et non `localhost`. Android peut bloquer le HTTP non chiffré dans une application compilée ; utilisez HTTPS. `EXPO_PUBLIC_APP_URL` reste facultative pour le lien externe proposé aux profils sans accès mobile.
 
-L'identifiant Android généré pour le développement est `com.omarb17.crmbatimentmobile` ; il doit être confirmé avant une publication.
+L'identifiant Android généré pour le développement est `com.troislmsolutions.crmbatimentmobile` ; il doit être confirmé avant une publication.
 
 Vérifications : `npm run typecheck`, `npm run lint`, `npm run test:access`, `npm run test:signature` et `npx expo export --platform android`.
 
