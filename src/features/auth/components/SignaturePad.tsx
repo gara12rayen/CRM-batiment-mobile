@@ -1,6 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
-  PanResponder,
   StyleSheet,
   Text,
   View,
@@ -8,50 +7,29 @@ import {
 } from "react-native";
 import { colors } from "@/core/theme/colors";
 import { spacing } from "@/core/theme/spacing";
+import { createSignature, type SignaturePoint } from "./signature";
 
-type Point = { x: number; y: number };
 
 type SignaturePadProps = {
   onChange: (signatureBase64: string | null) => void;
 };
 
-function createSignature(points: Point[]) {
-  if (points.length < 2) {
-    return null;
-  }
-
-  const path = points.map((point, index) => {
-    return `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`;
-  }).join(" ");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160" viewBox="0 0 320 160"><path d="${path}" fill="none" stroke="#172033" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}
-
 export function SignaturePad({ onChange }: SignaturePadProps) {
-  const [points, setPoints] = useState<Point[]>([]);
-  const pointsRef = useRef<Point[]>([]);
+  const [points, setPoints] = useState<SignaturePoint[]>([]);
+  const [width, setWidth] = useState(320);
+  const pointsRef = useRef<SignaturePoint[]>([]);
 
-  const updatePoint = (event: GestureResponderEvent) => {
+  function updatePoint(event: GestureResponderEvent, start: boolean) {
     const point = {
       x: event.nativeEvent.locationX,
       y: event.nativeEvent.locationY,
+      start,
     };
     const nextPoints = [...pointsRef.current, point];
     pointsRef.current = nextPoints;
     setPoints(nextPoints);
-    onChange(createSignature(nextPoints));
-  };
-
-  const responder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: updatePoint,
-        onPanResponderMove: updatePoint,
-      }),
-    [],
-  );
+    onChange(createSignature(nextPoints, width));
+  }
 
   function clear() {
     pointsRef.current = [];
@@ -61,8 +39,17 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
 
   return (
     <View>
-      <View style={styles.pad} {...responder.panHandlers}>
+      <View
+        style={styles.pad}
+        onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={(event) => updatePoint(event, true)}
+        onResponderMove={(event) => updatePoint(event, false)}
+      >
         {points.slice(1).map((point, index) => {
+          if (point.start) return null;
           const previous = points[index];
           const dx = point.x - previous.x;
           const dy = point.y - previous.y;
@@ -70,6 +57,7 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
           const angle = `${Math.atan2(dy, dx)}rad`;
           return (
             <View
+              pointerEvents="none"
               key={`${index}-${point.x}-${point.y}`}
               style={[
                 styles.stroke,
@@ -84,7 +72,7 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
           );
         })}
         {points.length === 0 && (
-          <Text style={styles.hint}>Signez ici avec votre doigt ou un stylet</Text>
+          <Text pointerEvents="none" style={styles.hint}>Signez ici avec votre doigt ou un stylet</Text>
         )}
       </View>
       <Text accessibilityRole="button" onPress={clear} style={styles.clear}>
