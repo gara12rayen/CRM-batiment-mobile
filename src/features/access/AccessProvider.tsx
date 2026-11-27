@@ -34,7 +34,13 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void getSessionUser().then((nextUser) => {
+      setUser(nextUser);
+      setReady(true);
+    }).catch((error: unknown) => {
+      console.error("Impossible de charger la session.", error);
+      setReady(true);
+    });
     return subscribeToSessionChange(() => {
       void refresh();
     });

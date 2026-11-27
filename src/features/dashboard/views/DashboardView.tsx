@@ -291,7 +291,7 @@ export function DashboardView() {
               title="Tous les devis"
               value="—"
               description="Tous les statuts"
-              color={colors.primary}
+              color={colors.brand[700]}
               onPress={openQuotes}
             />
           </View>
@@ -408,13 +408,13 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     flex: 1,
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 18,
     fontWeight: "700",
   },
 
   actionText: {
-    color: colors.primary,
+    color: colors.brand[700],
     fontSize: 13,
     fontWeight: "600",
   },
@@ -445,25 +445,25 @@ const styles = StyleSheet.create({
   },
 
   metricTitle: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 13,
     fontWeight: "500",
   },
 
   metricValue: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 27,
     fontWeight: "700",
   },
 
   metricDescription: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     lineHeight: 17,
   },
 
   cardAction: {
-    color: colors.primary,
+    color: colors.brand[700],
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
 
   cardHeading: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
 
   statusLabel: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 14,
   },
 
@@ -545,18 +545,18 @@ const styles = StyleSheet.create({
   },
 
   pendingValue: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 16,
     fontWeight: "700",
   },
 
   chevron: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 23,
   },
 
   helperText: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     lineHeight: 18,
     borderTopWidth: 1,
@@ -569,19 +569,19 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    color: colors.text,
+    color: colors.text.DEFAULT,
     fontSize: 15,
     fontWeight: "600",
   },
 
   emptyDescription: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 13,
     lineHeight: 20,
   },
 
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.brand[700],
     padding: spacing.md,
     borderRadius: 10,
     alignItems: "center",
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    color: colors.muted,
+    color: colors.text.muted,
     fontSize: 12,
     textAlign: "center",
     marginTop: spacing.sm,

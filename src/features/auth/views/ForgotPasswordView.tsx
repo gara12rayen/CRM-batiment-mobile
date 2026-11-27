@@ -2,9 +2,9 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
-  View,
 } from "react-native";
 
 type Props = {
@@ -34,7 +34,7 @@ export default function ForgotPasswordView({
   }
 
   return (
-    <View className="flex-1 justify-center bg-white px-6">
+    <ScrollView style={{ flex: 1, backgroundColor: "white" }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }} keyboardShouldPersistTaps="handled">
       <Text className="mb-2 text-2xl font-bold text-[#143B68]">
         Mot de passe oublié ?
       </Text>
@@ -76,6 +76,6 @@ export default function ForgotPasswordView({
           <Text className="font-semibold text-white">Envoyer le code</Text>
         )}
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
